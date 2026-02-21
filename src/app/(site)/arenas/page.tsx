@@ -37,7 +37,7 @@ export default function ArenasPage() {
 
   return (
     <div className="pt-32 pb-40 px-6 max-w-7xl mx-auto">
-      <div className="mb-16 stagger-reveal">
+      <div className="mb-16">
         <h1 className="font-headline text-5xl md:text-6xl mb-4 tracking-tighter uppercase">FESTIVAL <span className="text-primary">ARENAS</span></h1>
         <p className="text-muted-foreground text-lg max-w-2xl">From deep technical dives to mind-bending logic challenges, explore the dual tracks of TECH KURUKSHETRA.</p>
       </div>
@@ -48,7 +48,7 @@ export default function ArenasPage() {
           <h2 className="font-headline text-2xl tracking-widest text-primary uppercase">Technical Track</h2>
           <div className="h-px flex-1 bg-primary/20" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 stagger-reveal">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {eventsLoading ? (
             Array.from({ length: 3 }).map((_, i) => <EventSkeleton key={`tech-skel-${i}`} />)
           ) : (
@@ -100,7 +100,7 @@ export default function ArenasPage() {
           <h2 className="font-headline text-2xl tracking-widest text-accent uppercase">Non-Technical Track</h2>
           <div className="h-px flex-1 bg-accent/20" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 stagger-reveal">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {eventsLoading ? (
              Array.from({ length: 3 }).map((_, i) => <EventSkeleton key={`nontech-skel-${i}`} />)
           ) : (

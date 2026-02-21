@@ -57,7 +57,7 @@ export default function ArenaDetailPage({ params }: { params: { slug: string } }
         Back to Arenas
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 stagger-reveal">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
         <div className="lg:col-span-2 space-y-8">
           <div className="relative aspect-square overflow-hidden glass-panel border-primary/20 rounded-none shadow-2xl">
             <Image

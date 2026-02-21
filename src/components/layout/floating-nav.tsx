@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Gamepad2, Calendar, Megaphone, Users, ClipboardList, Info } from "lucide-react";
+import { Home, Gamepad2, Calendar, Megaphone, Users, ClipboardList, MessageSquare } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,7 @@ const navItems = [
   { href: "/timeline", icon: Calendar, label: "Timeline" },
   { href: "/announcements", icon: Megaphone, label: "Announcements" },
   { href: "/team", icon: Users, label: "Team" },
+  { href: "/contact", icon: MessageSquare, label: "Contact Us" },
   { href: "/register", icon: ClipboardList, label: "Participant Registration" },
 ];
 

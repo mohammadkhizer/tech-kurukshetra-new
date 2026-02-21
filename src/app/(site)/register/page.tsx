@@ -63,7 +63,7 @@ export default function RegisterPage() {
 
   if (isSuccess) {
     return (
-      <div className="pt-48 pb-20 px-6 flex flex-col items-center justify-center text-center stagger-reveal">
+      <div className="pt-48 pb-20 px-6 flex flex-col items-center justify-center text-center">
         <div className="relative mb-12">
           <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full animate-pulse" />
           <div className="relative w-32 h-32 bg-background border-2 border-primary flex items-center justify-center rounded-none rotate-45 group">
@@ -93,7 +93,7 @@ export default function RegisterPage() {
 
   return (
     <div className="pt-32 pb-40 px-6 max-w-5xl mx-auto min-h-screen">
-      <div className="text-center mb-16 stagger-reveal">
+      <div className="text-center mb-16">
         <div className="inline-flex items-center gap-2 px-4 py-1 glass-panel border-accent/30 rounded-full mb-6 mx-auto">
           <Zap className="w-4 h-4 text-accent" />
           <span className="text-[10px] font-headline tracking-[0.3em] text-accent uppercase">Protocol Initiation</span>
@@ -106,7 +106,7 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start stagger-reveal">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
         <div className="lg:col-span-4 space-y-6">
           <div className="glass-panel p-8 border-primary/20 rounded-none bg-black/40">
             <h3 className="font-headline text-xs tracking-[0.3em] text-primary uppercase mb-6 flex items-center gap-2">

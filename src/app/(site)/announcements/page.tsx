@@ -3,8 +3,9 @@
 import { useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
-import { Loader2, Megaphone } from 'lucide-react';
+import { Loader2, Megaphone, ArrowRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import Link from 'next/link';
 
 export default function AnnouncementsPage() {
   const firestore = useFirestore();
@@ -28,8 +29,8 @@ export default function AnnouncementsPage() {
   };
 
   return (
-    <div className="pt-32 pb-40 px-6 max-w-4xl mx-auto min-h-screen">
-      <div className="text-center mb-16 stagger-reveal">
+    <div className="pt-32 pb-40 px-6 max-w-6xl mx-auto min-h-screen">
+      <div className="text-center mb-16">
         <h1 className="font-headline text-5xl md:text-6xl mb-4 tracking-tighter uppercase">
           Mission <span className="text-primary">Briefings</span>
         </h1>
@@ -43,25 +44,35 @@ export default function AnnouncementsPage() {
           <Loader2 className="w-12 h-12 text-primary animate-spin" />
         </div>
       ) : announcements && announcements.length > 0 ? (
-        <div className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {announcements.map((announcement, idx) => (
-            <Card
+            <Link
               key={announcement.id}
-              className="glass-panel border-primary/20 p-8 rounded-none stagger-reveal bg-black/40"
-              style={{ animationDelay: `${idx * 100}ms` }}
+              href={`/announcements/${announcement.id}`}
+              className="group block"
             >
-              <div className="flex items-center gap-2 text-accent text-[10px] font-headline tracking-[0.2em] uppercase mb-3">
-                <Megaphone className="w-3.5 h-3.5" />
-                <span>{formatDate(announcement.timestamp)}</span>
-              </div>
-
-              <h2 className="text-3xl font-headline mb-4 text-white tracking-tight uppercase">
-                {announcement.title}
-              </h2>
-              <p className="text-muted-foreground font-light leading-relaxed text-md">
-                {announcement.content}
-              </p>
-            </Card>
+              <Card
+                className="glass-panel border-primary/10 hover:border-primary/40 p-8 rounded-none bg-black/20 h-full flex flex-col transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10"
+                style={{ animationDelay: `${idx * 100}ms` }}
+              >
+                <div className="flex-grow">
+                  <div className="flex items-center gap-2 text-accent text-[10px] font-headline tracking-[0.2em] uppercase mb-4">
+                    <Megaphone className="w-3.5 h-3.5" />
+                    <span>{formatDate(announcement.timestamp)}</span>
+                  </div>
+                  <h2 className="text-2xl font-headline mb-4 text-white tracking-tight uppercase group-hover:text-primary transition-colors">
+                    {announcement.title}
+                  </h2>
+                  <p className="text-muted-foreground font-light leading-relaxed text-sm line-clamp-3">
+                    {announcement.content}
+                  </p>
+                </div>
+                <div className="mt-6 text-xs font-headline text-primary tracking-[0.2em] uppercase flex items-center">
+                  Read Briefing
+                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Card>
+            </Link>
           ))}
         </div>
       ) : (

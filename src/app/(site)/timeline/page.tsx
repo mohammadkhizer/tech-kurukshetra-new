@@ -68,12 +68,12 @@ export default function TimelinePage() {
 
   return (
     <div className="pt-32 pb-20 px-6 max-w-4xl mx-auto min-h-screen">
-      <div className="text-center mb-16 stagger-reveal">
+      <div className="text-center mb-16">
         <h1 className="font-headline text-5xl md:text-6xl mb-4 tracking-tighter uppercase text-white">FESTIVAL <span className="text-accent">TIMELINE</span></h1>
         <p className="text-muted-foreground text-lg uppercase tracking-widest font-light">Two days of intense innovation, learning, and celebration.</p>
       </div>
 
-      <Tabs defaultValue={scheduleData[0]?.id} className="w-full stagger-reveal">
+      <Tabs defaultValue={scheduleData[0]?.id} className="w-full">
         <TabsList className="flex w-full bg-secondary/30 rounded-none mb-12 p-1 border border-white/5">
           {scheduleData.map(day => (
             <TabsTrigger key={day.id} value={day.id} className="flex-1 font-headline text-xs tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white rounded-none py-4 uppercase">{day.name}</TabsTrigger>

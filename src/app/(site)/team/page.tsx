@@ -78,7 +78,7 @@ export default function TeamPage() {
 
   return (
     <div className="pt-32 pb-40 px-6 max-w-7xl mx-auto min-h-screen">
-      <div className="mb-20 stagger-reveal text-center">
+      <div className="mb-20 text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 glass-panel border-primary/30 rounded-full mb-6 mx-auto">
           <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           <span className="text-[10px] font-headline tracking-[0.2em] text-primary uppercase">Active Personnel</span>
@@ -104,7 +104,7 @@ export default function TeamPage() {
                         <h2 className="font-headline text-xl md:text-2xl tracking-widest text-primary uppercase text-center">{category}</h2>
                         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-24 stagger-reveal">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-24">
                         {(members as any[]).map((member: any, idx: number) => {
                           const isShifted = idx % 2 !== 0;
 

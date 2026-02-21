@@ -5,62 +5,11 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ArrowRight, Code, Zap, Globe, Cpu, Loader2 } from 'lucide-react';
+import { ArrowRight, Code, Zap, Globe, Cpu, Loader2, Lightbulb, Users, Trophy } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
-
-const AboutSection = () => {
-    const heroImg = PlaceHolderImages.find(img => img.id === 'hero-tech');
-    return (
-        <section className="py-24 md:py-32">
-             <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-y-16 lg:gap-x-16 items-center stagger-reveal">
-                <div className="space-y-8">
-                <div>
-                    <span className="text-accent text-xs font-headline tracking-[0.3em] uppercase">The Legend</span>
-                    <h2 className="font-headline text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-6 tracking-tighter leading-none">
-                    TECH <br />
-                    <span className="text-primary">KURUKSHETRA</span>
-                    </h2>
-                </div>
-
-                <p className="text-lg md:text-xl font-light text-muted-foreground leading-relaxed">
-                    TECH KURUKSHETRA started 5 years ago with a simple mission: to bridge the gap between academic theory and industry reality. Today, it has evolved into a global battlefield where the brightest minds converge.
-                </p>
-
-                <div className="space-y-6">
-                    <div className="border-l-4 border-primary pl-6">
-                    <h3 className="text-2xl font-headline mb-2">OUR VISION</h3>
-                    <p className="text-muted-foreground">To inspire a new generation of problem solvers through radical collaboration and technological warfare.</p>
-                    </div>
-                    <div className="border-l-4 border-accent pl-6">
-                    <h3 className="text-2xl font-headline mb-2">THE THEME: NEON HORIZON</h3>
-                    <p className="text-muted-foreground">This year's theme focuses on the intersection of human creativity and automated intelligence—exploring how we coexist with our creations.</p>
-                    </div>
-                </div>
-                </div>
-
-                <div className="relative h-[400px] md:h-[600px]">
-                <div className="absolute inset-0 glass-panel border-primary/40 z-0 rounded-none" />
-                <div className="absolute inset-4 overflow-hidden z-10 rounded-none">
-                    <Image
-                    src={heroImg?.imageUrl || ''}
-                    alt="Festival Vibe"
-                    fill
-                    className="object-cover grayscale hover:grayscale-0 transition-all duration-1000 rounded-none"
-                    data-ai-hint="futuristic technology"
-                    />
-                </div>
-                <div className="absolute -bottom-4 right-4 glass-panel p-4 z-20 max-w-[280px] rounded-none">
-                    <p className="text-3xl font-headline text-accent mb-2">50K+</p>
-                    <p className="text-xs font-headline tracking-widest text-muted-foreground uppercase">Expected Attendees Worldwide</p>
-                </div>
-                </div>
-            </div>
-        </section>
-    );
-};
 
 const statsConfig = [
     { icon: Code, label: "Competitions", key: "competitions", defaultValue: "10+" },
@@ -71,6 +20,7 @@ const statsConfig = [
 
 export default function Home() {
   const heroImg = PlaceHolderImages.find(img => img.id === 'hero-tech');
+  const aboutImg = PlaceHolderImages.find(img => img.id === 'hero-tech');
   
   const firestore = useFirestore();
 
@@ -104,7 +54,7 @@ export default function Home() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-6rem)] text-center stagger-reveal">
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-6rem)] text-center">
           <div className="inline-block px-4 py-1 glass-panel border-accent/30 rounded-full mb-6">
             <span className="text-accent text-xs font-headline tracking-[0.2em] uppercase">TECH KURUKSHETRA 2026</span>
           </div>
@@ -172,6 +122,61 @@ export default function Home() {
           </div>
         </div>
         
+        <section className="py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="relative h-full min-h-[300px] lg:min-h-[500px]">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/20 blur-3xl" />
+              <div className="relative w-full h-full p-4">
+                  <div className="relative w-full h-full glass-panel border-primary/20 rounded-none overflow-hidden rotate-[-3deg] hover:rotate-0 transition-transform duration-500">
+                      <Image 
+                          src={aboutImg?.imageUrl || ''}
+                          alt="About TECH KURUKSHETRA"
+                          fill
+                          className="object-cover"
+                          data-ai-hint="futuristic technology event"
+                      />
+                  </div>
+              </div>
+            </div>
+
+            <div className="space-y-10">
+              <div>
+                  <h2 className="font-headline text-3xl md:text-4xl mb-4 tracking-tighter uppercase">ABOUT THE <span className="text-primary">BATTLEFIELD</span></h2>
+                  <p className="text-muted-foreground text-lg max-w-2xl">TECH KURUKSHETRA is more than a festival; it's a convergence of the brightest minds in technology. A place to learn, build, and conquer.</p>
+              </div>
+              <div className="space-y-6">
+                  <div className="flex items-start gap-4">
+                      <div className="glass-panel border-primary/20 p-3 mt-1">
+                          <Lightbulb className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                          <h3 className="font-headline text-lg text-white uppercase tracking-widest">Innovation</h3>
+                          <p className="text-muted-foreground font-light">Push the boundaries of what's possible with cutting-edge workshops and challenges.</p>
+                      </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                      <div className="glass-panel border-primary/20 p-3 mt-1">
+                          <Users className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                          <h3 className="font-headline text-lg text-white uppercase tracking-widest">Collaboration</h3>
+                          <p className="text-muted-foreground font-light">Connect with fellow tech enthusiasts, mentors, and industry leaders.</p>
+                      </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                      <div className="glass-panel border-primary/20 p-3 mt-1">
+                          <Trophy className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                          <h3 className="font-headline text-lg text-white uppercase tracking-widest">Competition</h3>
+                          <p className="text-muted-foreground font-light">Test your skills in high-stakes arenas and fight for the top spot.</p>
+                      </div>
+                  </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <div className="w-full pb-20 space-y-16">
             <div className="text-center">
                 <h2 className="font-headline text-3xl md:text-4xl mb-4 tracking-tighter uppercase text-white">Our <span className="text-primary">Partners</span></h2>
@@ -237,7 +242,6 @@ export default function Home() {
                 </section>
             )}
         </div>
-        <AboutSection />
       </div>
     </div>
   );

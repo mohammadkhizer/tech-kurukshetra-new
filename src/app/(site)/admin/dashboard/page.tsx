@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useState, useMemo, useEffect } from 'react';
@@ -12,6 +13,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Switch } from '@/components/ui/switch';
 import { 
   Loader2, 
   Plus, 
@@ -40,10 +61,16 @@ import {
   Clock,
   MapPin,
   Megaphone,
+  Link as LinkIcon,
+  Share2,
+  Twitter,
+  Instagram,
+  MessageSquare,
+  Mail,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { eventsData as INITIAL_EVENTS } from '@/lib/events-data';
-import { useUser, useAuth, useFirestore, useCollection, useDoc, addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
+import { useUser, useAuth, useFirestore, useCollection, useDoc, addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, orderBy, query, serverTimestamp, setDoc } from 'firebase/firestore';
 
 const architectCategories = [
@@ -54,6 +81,15 @@ const architectCategories = [
   "Decoration",
   "Promotion",
   "Management planing and operational Team"
+];
+
+const footerLinkCategories = ["Festival", "Connect", "Legal"];
+const socialPlatforms = [
+    { name: 'Instagram', icon: 'Instagram' },
+    { name: 'Twitter', icon: 'Twitter' },
+    { name: 'LinkedIn', icon: 'Linkedin' },
+    { name: 'Github', icon: 'Github' },
+    { name: 'Mail', icon: 'Mail' },
 ];
 
 export default function DashboardPage() {
@@ -108,10 +144,29 @@ export default function DashboardPage() {
   const announcementsQuery = useMemoFirebase(() => isAuthorized ? query(collection(firestore, 'announcements'), orderBy('timestamp', 'desc')) : null, [isAuthorized, firestore]);
   const { data: announcements, isLoading: announcementsLoading } = useCollection(announcementsQuery);
 
+  const footerLinksQuery = useMemoFirebase(() => isAuthorized ? query(collection(firestore, 'footerLinks'), orderBy('displayOrder')) : null, [isAuthorized, firestore]);
+  const { data: footerLinks, isLoading: footerLinksLoading } = useCollection(footerLinksQuery);
+
+  const socialLinksQuery = useMemoFirebase(() => isAuthorized ? query(collection(firestore, 'socialMediaLinks'), orderBy('displayOrder')) : null, [isAuthorized, firestore]);
+  const { data: socialLinks, isLoading: socialLinksLoading } = useCollection(socialLinksQuery);
+
+  const contactMessagesQuery = useMemoFirebase(() => isAuthorized ? query(collection(firestore, 'contactMessages'), orderBy('submittedAt', 'desc')) : null, [isAuthorized, firestore]);
+  const { data: contactMessages, isLoading: contactMessagesLoading } = useCollection(contactMessagesQuery);
+
 
   const sortedTeamMembers = useMemo(() => 
     teamMembers?.slice().sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)) || [],
     [teamMembers]
+  );
+
+  const sortedFooterLinks = useMemo(() =>
+    footerLinks?.slice().sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)) || [],
+    [footerLinks]
+  );
+  
+  const sortedSocialLinks = useMemo(() =>
+    socialLinks?.slice().sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)) || [],
+    [socialLinks]
   );
   
   const adminIds = useMemo(() => new Set(admins?.map(admin => admin.id)), [admins]);
@@ -147,6 +202,14 @@ export default function DashboardPage() {
   const [editingArchitect, setEditingArchitect] = useState<any | null>(null);
   const [newDay, setNewDay] = useState({ name: '', date: '' });
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
+  
+  const [newFooterLink, setNewFooterLink] = useState({ title: '', url: '', category: 'Festival', displayOrder: 0 });
+  const [editingFooterLink, setEditingFooterLink] = useState<any | null>(null);
+
+  const [newSocialLink, setNewSocialLink] = useState({ platform: 'Instagram', url: '#', iconName: 'Instagram', displayOrder: 0 });
+  const [editingSocialLink, setEditingSocialLink] = useState<any | null>(null);
+  
+  const [editingRegistration, setEditingRegistration] = useState<any | null>(null);
 
 
   const heroContentRef = useMemoFirebase(() => isAuthorized ? doc(firestore, 'heroContent', 'main') : null, [isAuthorized, firestore]);
@@ -441,7 +504,7 @@ export default function DashboardPage() {
         toast({ variant: "destructive", title: "Incomplete Data", description: "Title and content are required." });
         return;
     }
-    if (!isAuthorized || !firestore) {
+    if (!isAuthorized) {
         toast({ variant: "destructive", title: "Authorization Error", description: "Cannot publish announcement." });
         return;
     }
@@ -462,6 +525,135 @@ export default function DashboardPage() {
       deleteDocumentNonBlocking(announcementDocRef);
       toast({ title: "Announcement Retracted", description: "The announcement has been removed." });
   };
+
+  const handleNewFooterLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type } = e.target;
+    setNewFooterLink(prev => ({ ...prev, [name]: type === 'number' ? (parseInt(value, 10) || 0) : value }));
+  };
+  const handleFooterLinkCategoryChange = (value: string) => {
+    setNewFooterLink(prev => ({ ...prev, category: value }));
+  };
+  const handleAddFooterLink = () => {
+    if (!newFooterLink.title || !newFooterLink.url) {
+        toast({ variant: "destructive", title: "Incomplete Data", description: "Link title and URL are required." });
+        return;
+    }
+    if (isAuthorized) {
+        const id = Math.random().toString(36).substr(2, 9);
+        const colRef = collection(firestore, 'footerLinks');
+        addDocumentNonBlocking(colRef, { ...newFooterLink, id });
+        setNewFooterLink({ title: '', url: '', category: 'Festival', displayOrder: 0 });
+        toast({ title: "Footer Link Added" });
+    }
+  };
+  const handleDeleteFooterLink = (id: string) => {
+      const linkDocRef = doc(firestore, 'footerLinks', id);
+      deleteDocumentNonBlocking(linkDocRef);
+      toast({ title: "Footer Link Removed" });
+  };
+  const handleFooterLinkEditClick = (link: any) => {
+    setEditingFooterLink(link);
+    setNewFooterLink({ ...link });
+  };
+  const handleCancelFooterLinkEdit = () => {
+    setEditingFooterLink(null);
+    setNewFooterLink({ title: '', url: '', category: 'Festival', displayOrder: 0 });
+  };
+  const handleUpdateFooterLink = () => {
+    if (!editingFooterLink) return;
+    const linkDocRef = doc(firestore, 'footerLinks', editingFooterLink.id);
+    setDocumentNonBlocking(linkDocRef, newFooterLink, { merge: true });
+    toast({ title: "Footer Link Updated" });
+    handleCancelFooterLinkEdit();
+  };
+
+
+  const handleNewSocialLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type } = e.target;
+    setNewSocialLink(prev => ({ ...prev, [name]: type === 'number' ? (parseInt(value, 10) || 0) : value }));
+  };
+  const handleSocialPlatformChange = (value: string) => {
+    const platform = socialPlatforms.find(p => p.name === value);
+    if (platform) {
+        setNewSocialLink(prev => ({...prev, platform: platform.name, iconName: platform.icon}));
+    }
+  };
+  const handleAddSocialLink = () => {
+    if (!newSocialLink.platform || !newSocialLink.url) {
+        toast({ variant: "destructive", title: "Incomplete Data", description: "Platform and URL are required." });
+        return;
+    }
+    if (isAuthorized) {
+        const id = Math.random().toString(36).substr(2, 9);
+        const colRef = collection(firestore, 'socialMediaLinks');
+        addDocumentNonBlocking(colRef, { ...newSocialLink, id });
+        setNewSocialLink({ platform: 'Instagram', url: '#', iconName: 'Instagram', displayOrder: 0 });
+        toast({ title: "Social Link Added" });
+    }
+  };
+  const handleDeleteSocialLink = (id: string) => {
+      const linkDocRef = doc(firestore, 'socialMediaLinks', id);
+      deleteDocumentNonBlocking(linkDocRef);
+      toast({ title: "Social Link Removed" });
+  };
+  const handleSocialLinkEditClick = (link: any) => {
+    setEditingSocialLink(link);
+    setNewSocialLink({ ...link });
+  };
+  const handleCancelSocialLinkEdit = () => {
+    setEditingSocialLink(null);
+    setNewSocialLink({ platform: 'Instagram', url: '#', iconName: 'Instagram', displayOrder: 0 });
+  };
+  const handleUpdateSocialLink = () => {
+    if (!editingSocialLink) return;
+    const linkDocRef = doc(firestore, 'socialMediaLinks', editingSocialLink.id);
+    setDocumentNonBlocking(linkDocRef, newSocialLink, { merge: true });
+    toast({ title: "Social Link Updated" });
+    handleCancelSocialLinkEdit();
+  };
+
+  const handleToggleRead = (id: string, currentStatus: boolean) => {
+    const messageDocRef = doc(firestore, 'contactMessages', id);
+    updateDocumentNonBlocking(messageDocRef, { isRead: !currentStatus });
+    toast({ title: `Message marked as ${!currentStatus ? 'read' : 'unread'}` });
+  };
+
+  const handleDeleteMessage = (id: string) => {
+      const messageDocRef = doc(firestore, 'contactMessages', id);
+      deleteDocumentNonBlocking(messageDocRef);
+      toast({ title: "Message Deleted" });
+  };
+  
+    const handleRegistrationInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!editingRegistration) return;
+        const { name, value } = e.target;
+        setEditingRegistration((prev: any) => ({ ...prev, [name]: value }));
+    };
+
+    const handleRegistrationSwitchChange = (name: string, checked: boolean) => {
+        if (!editingRegistration) return;
+        setEditingRegistration((prev: any) => ({ ...prev, [name]: checked }));
+    };
+    
+    const handleRegistrationSelectChange = (name: string, value: string) => {
+        if (!editingRegistration) return;
+        setEditingRegistration((prev: any) => ({ ...prev, [name]: value }));
+    };
+
+    const handleDeleteRegistration = (id: string) => {
+      const regRef = doc(firestore, 'participant_registrations', id);
+      deleteDocumentNonBlocking(regRef);
+      toast({ title: "Registration Deleted", description: "The participant's record has been removed." });
+    };
+    
+    const handleUpdateRegistration = () => {
+      if (!editingRegistration) return;
+      const { id, ...dataToUpdate } = editingRegistration;
+      const regRef = doc(firestore, 'participant_registrations', id);
+      updateDocumentNonBlocking(regRef, dataToUpdate);
+      toast({ title: "Registration Updated", description: "Participant details have been saved." });
+      setEditingRegistration(null);
+    };
 
   const formatDashboardDate = (dateString: string) => {
       if (!dateString) return "No date set";
@@ -542,21 +734,23 @@ export default function DashboardPage() {
           <h1 className="font-headline text-5xl mb-2 tracking-tighter text-white uppercase">KURUKSHETRA <span className="text-primary">CONTROL</span></h1>
           <p className="text-muted-foreground text-sm uppercase tracking-widest font-bold">Protocol Management Panel</p>
         </div>
-        <Button onClick={handleLogout} variant="outline" className="border-primary/20 hover:bg-primary/10 rounded-none text-xs font-headline tracking-widest uppercase">
+        <Button onClick={handleLogout} variant="outline" className="border-primary/20 rounded-none text-xs font-headline tracking-widest uppercase">
           TERMINATE SESSION
         </Button>
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-8" onValueChange={(value) => { setActiveTab(value); handleCancelEdit(); handleCancelArchitectEdit(); }}>
-        <TabsList className="grid grid-cols-4 md:grid-cols-8 bg-white/5 rounded-none p-1 border border-white/10">
+        <TabsList className="grid grid-cols-5 md:grid-cols-10 bg-white/5 rounded-none p-1 border border-white/10">
           <TabsTrigger value="dashboard" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Dashboard</TabsTrigger>
           <TabsTrigger value="home" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Home</TabsTrigger>
           <TabsTrigger value="events" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Events</TabsTrigger>
           <TabsTrigger value="schedule" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Schedule</TabsTrigger>
           <TabsTrigger value="announcements" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Announcements</TabsTrigger>
           <TabsTrigger value="team" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Team</TabsTrigger>
+          <TabsTrigger value="footer" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Footer</TabsTrigger>
           <TabsTrigger value="registrations" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Registrations</TabsTrigger>
           <TabsTrigger value="admins" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Admins</TabsTrigger>
+          <TabsTrigger value="messages" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Messages</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-8">
@@ -1081,6 +1275,96 @@ export default function DashboardPage() {
             </div>
           </div>
         </TabsContent>
+        
+        <TabsContent value="footer">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <Card className="glass-panel border-primary/20 rounded-none bg-black/40">
+              <CardHeader>
+                <CardTitle className="font-headline text-lg tracking-widest flex items-center gap-2 uppercase">
+                  <LinkIcon className="w-5 h-5 text-primary" /> Footer Nav Links
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Form to add/edit */}
+                <div className="flex gap-2 mb-4">
+                  <Input name="title" value={newFooterLink.title} onChange={handleNewFooterLinkChange} placeholder="Link Title" className="bg-white/5 border-white/10 rounded-none" />
+                  <Input name="url" value={newFooterLink.url} onChange={handleNewFooterLinkChange} placeholder="URL" className="bg-white/5 border-white/10 rounded-none" />
+                  <Select value={newFooterLink.category} onValueChange={handleFooterLinkCategoryChange}>
+                    <SelectTrigger className="w-[180px] bg-white/5 border-white/10 rounded-none"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-black/80 backdrop-blur-md border-white/10 text-white rounded-none">
+                      {footerLinkCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Input name="displayOrder" type="number" value={newFooterLink.displayOrder} onChange={handleNewFooterLinkChange} className="w-20 bg-white/5 border-white/10 rounded-none" />
+                  <Button onClick={editingFooterLink ? handleUpdateFooterLink : handleAddFooterLink} className="bg-primary text-background hover:bg-primary/80 rounded-none">
+                    {editingFooterLink ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                  </Button>
+                  {editingFooterLink && <Button onClick={handleCancelFooterLinkEdit} variant="secondary" className="rounded-none">X</Button>}
+                </div>
+                {/* Table of links */}
+                <Table>
+                  <TableHeader><TableRow><TableHead>Order</TableHead><TableHead>Title</TableHead><TableHead>URL</TableHead><TableHead>Category</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                  <TableBody>
+                    {footerLinksLoading && <TableRow><TableCell colSpan={5}><Loader2 className="mx-auto animate-spin" /></TableCell></TableRow>}
+                    {sortedFooterLinks.map(link => (
+                      <TableRow key={link.id} className="text-xs">
+                        <TableCell>{link.displayOrder}</TableCell>
+                        <TableCell>{link.title}</TableCell>
+                        <TableCell className="text-muted-foreground truncate max-w-xs">{link.url}</TableCell>
+                        <TableCell><Badge variant="outline" className="text-primary border-primary/40 text-[9px] uppercase">{link.category}</Badge></TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" onClick={() => handleFooterLinkEditClick(link)}><Pencil className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteFooterLink(link.id)}><Trash2 className="w-4 h-4" /></Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+            
+            <Card className="glass-panel border-accent/20 rounded-none bg-black/40">
+              <CardHeader>
+                <CardTitle className="font-headline text-lg tracking-widest flex items-center gap-2 uppercase">
+                  <Share2 className="w-5 h-5 text-accent" /> Social Media Links
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                 <div className="flex gap-2 mb-4">
+                  <Select value={newSocialLink.platform} onValueChange={handleSocialPlatformChange}>
+                    <SelectTrigger className="w-[180px] bg-white/5 border-white/10 rounded-none"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-black/80 backdrop-blur-md border-white/10 text-white rounded-none">
+                      {socialPlatforms.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Input name="url" value={newSocialLink.url} onChange={handleNewSocialLinkChange} placeholder="URL" className="bg-white/5 border-white/10 rounded-none" />
+                  <Input name="displayOrder" type="number" value={newSocialLink.displayOrder} onChange={handleNewSocialLinkChange} className="w-20 bg-white/5 border-white/10 rounded-none" />
+                  <Button onClick={editingSocialLink ? handleUpdateSocialLink : handleAddSocialLink} className="bg-accent text-background hover:bg-accent/80 rounded-none">
+                    {editingSocialLink ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                  </Button>
+                  {editingSocialLink && <Button onClick={handleCancelSocialLinkEdit} variant="secondary" className="rounded-none">X</Button>}
+                </div>
+                <Table>
+                  <TableHeader><TableRow><TableHead>Order</TableHead><TableHead>Platform</TableHead><TableHead>URL</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                  <TableBody>
+                    {socialLinksLoading && <TableRow><TableCell colSpan={4}><Loader2 className="mx-auto animate-spin" /></TableCell></TableRow>}
+                    {sortedSocialLinks.map(link => (
+                      <TableRow key={link.id} className="text-xs">
+                        <TableCell>{link.displayOrder}</TableCell>
+                        <TableCell>{link.platform}</TableCell>
+                        <TableCell className="text-muted-foreground truncate max-w-xs">{link.url}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" onClick={() => handleSocialLinkEditClick(link)}><Pencil className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteSocialLink(link.id)}><Trash2 className="w-4 h-4" /></Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         <TabsContent value="registrations">
           <Card className="glass-panel border-primary/20 rounded-none bg-black/40">
@@ -1100,11 +1384,14 @@ export default function DashboardPage() {
                     <TableHead className="text-[10px] uppercase tracking-widest">Identity</TableHead>
                     <TableHead className="text-[10px] uppercase tracking-widest">Communication</TableHead>
                     <TableHead className="text-[10px] uppercase tracking-widest">Arena</TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-widest">Verification</TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-widest">Payment</TableHead>
                     <TableHead className="text-[10px] uppercase tracking-widest">Time</TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-widest text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {registrationsLoading && <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="mx-auto animate-spin" /></TableCell></TableRow>}
+                  {registrationsLoading && <TableRow><TableCell colSpan={7} className="text-center"><Loader2 className="mx-auto animate-spin" /></TableCell></TableRow>}
                   {registrations?.map((reg) => (
                     <TableRow key={reg.id} className="border-white/5 hover:bg-white/5">
                       <TableCell className="text-[10px] uppercase font-bold text-white tracking-widest">{reg.fullName}</TableCell>
@@ -1114,7 +1401,96 @@ export default function DashboardPage() {
                           {reg.registeredEventIds?.[0] || 'N/A'}
                         </span>
                       </TableCell>
+                       <TableCell>
+                        {reg.isVerified ? (
+                          <Badge variant="outline" className="text-primary border-primary/40 text-[9px] uppercase tracking-widest"><ShieldCheck className="w-3 h-3 mr-1" />Verified</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground border-muted-foreground/40 text-[9px] uppercase tracking-widest"><ShieldOff className="w-3 h-3 mr-1" />Not Verified</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-accent border-accent/40 text-[9px] uppercase">{reg.paymentStatus || 'Pending'}</Badge>
+                      </TableCell>
                       <TableCell className="text-[10px] font-code text-muted-foreground/60">{new Date(reg.registrationDate).toLocaleString()}</TableCell>
+                       <TableCell className="text-right">
+                        <Dialog open={editingRegistration?.id === reg.id} onOpenChange={(isOpen) => !isOpen && setEditingRegistration(null)}>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={() => setEditingRegistration(reg)} className="text-muted-foreground hover:text-primary">
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="glass-panel border-primary/20 bg-black/60 rounded-none">
+                            <DialogHeader>
+                              <DialogTitle className="font-headline uppercase tracking-widest text-primary">Edit Registration</DialogTitle>
+                            </DialogHeader>
+                            {editingRegistration && (
+                              <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Full Name</Label>
+                                    <Input name="fullName" value={editingRegistration.fullName} onChange={handleRegistrationInputChange} className="bg-white/5 border-white/10 rounded-none" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Email</Label>
+                                    <Input name="email" type="email" value={editingRegistration.email} onChange={handleRegistrationInputChange} className="bg-white/5 border-white/10 rounded-none" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Phone Number</Label>
+                                    <Input name="phoneNumber" value={editingRegistration.phoneNumber || ''} onChange={handleRegistrationInputChange} className="bg-white/5 border-white/10 rounded-none" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">University</Label>
+                                    <Input name="university" value={editingRegistration.university} onChange={handleRegistrationInputChange} className="bg-white/5 border-white/10 rounded-none" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Course/Student ID</Label>
+                                    <Input name="studentId" value={editingRegistration.studentId} onChange={handleRegistrationInputChange} className="bg-white/5 border-white/10 rounded-none" />
+                                </div>
+                                <div className="flex items-center justify-between glass-panel p-3 border-white/5 bg-white/5 rounded-none">
+                                    <Label htmlFor={`verify-switch-${editingRegistration.id}`} className="text-[10px] uppercase tracking-widest text-muted-foreground">Is Verified</Label>
+                                    <Switch id={`verify-switch-${editingRegistration.id}`} checked={editingRegistration.isVerified} onCheckedChange={(checked) => handleRegistrationSwitchChange('isVerified', checked)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Payment Status</Label>
+                                    <Select value={editingRegistration.paymentStatus || 'Pending'} onValueChange={(value) => handleRegistrationSelectChange('paymentStatus', value)}>
+                                        <SelectTrigger className="w-full bg-white/5 border-white/10 p-2 text-xs rounded-none text-white h-auto">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-black/80 backdrop-blur-md border-white/10 text-white rounded-none">
+                                            <SelectItem value="Pending">Pending</SelectItem>
+                                            <SelectItem value="Completed">Completed</SelectItem>
+                                            <SelectItem value="Refunded">Refunded</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                              </div>
+                            )}
+                            <DialogFooter>
+                              <Button variant="outline" onClick={() => setEditingRegistration(null)} className="rounded-none uppercase text-xs tracking-widest">Cancel</Button>
+                              <Button onClick={handleUpdateRegistration} className="bg-primary hover:bg-primary/80 rounded-none uppercase text-xs tracking-widest">Save Changes</Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="glass-panel border-destructive/40 bg-black/60 rounded-none">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="font-headline text-destructive uppercase">Confirm Deletion</AlertDialogTitle>
+                              <AlertDialogDescription className="text-muted-foreground">
+                                Are you sure you want to delete the registration for {reg.fullName}? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="rounded-none uppercase text-xs tracking-widest">Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteRegistration(reg.id)} className="bg-destructive hover:bg-destructive/80 rounded-none uppercase text-xs tracking-widest">Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -1192,6 +1568,66 @@ export default function DashboardPage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="messages">
+          <Card className="glass-panel border-primary/20 rounded-none bg-black/40">
+            <CardHeader>
+              <CardTitle className="font-headline text-xl tracking-widest flex items-center gap-2 uppercase">
+                <MessageSquare className="w-5 h-5 text-primary" /> Incoming Transmissions
+              </CardTitle>
+              <CardDescription className="text-[10px] uppercase tracking-widest mt-1">Direct messages from users.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader className="border-white/10">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-[10px] uppercase tracking-widest">From</TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-widest">Message</TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-widest">Received</TableHead>
+                    <TableHead className="text-[10px] uppercase tracking-widest text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contactMessagesLoading && (
+                      <TableRow>
+                          <TableCell colSpan={4} className="text-center">
+                              <Loader2 className="mx-auto animate-spin" />
+                          </TableCell>
+                      </TableRow>
+                  )}
+                  {contactMessages?.map((message) => (
+                    <TableRow key={message.id} className={`border-white/5 hover:bg-white/5 ${!message.isRead ? 'bg-primary/10' : ''}`}>
+                      <TableCell>
+                          <div className={`font-bold text-white tracking-widest uppercase text-[11px] ${!message.isRead ? 'text-primary' : ''}`}>{message.name}</div>
+                          <div className="text-[10px] text-muted-foreground">{message.email}</div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground max-w-md">{message.message}</TableCell>
+                      <TableCell className="text-[10px] font-code text-muted-foreground/60">{new Date(message.submittedAt).toLocaleString()}</TableCell>
+                      <TableCell className="text-right">
+                          <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleToggleRead(message.id, message.isRead)}
+                              title={message.isRead ? 'Mark as unread' : 'Mark as read'}
+                          >
+                              {message.isRead ? <Mail className="w-4 h-4 text-muted-foreground" /> : <Mail className="w-4 h-4 text-primary" />}
+                          </Button>
+                          <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteMessage(message.id)}
+                              className="text-muted-foreground hover:text-destructive"
+                              title="Delete message"
+                          >
+                              <Trash2 className="w-4 h-4" />
+                          </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
