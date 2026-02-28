@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Loader2, Mail, MessageSquare, User, Send, MapPin } from 'lucide-react';
+import { CheckCircle2, Loader2, Mail, MessageSquare, User, Send, MapPin, Phone } from 'lucide-react';
 import { addDocumentNonBlocking, useFirestore } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -97,6 +97,15 @@ export default function ContactPage() {
                 <div>
                     <h3 className="font-headline text-lg text-white uppercase tracking-widest">General Inquiries</h3>
                     <a href="mailto:btech_events@svgu.ac.in" className="text-muted-foreground font-light hover:text-primary transition-colors">btech_events@svgu.ac.in</a>
+                </div>
+            </div>
+            <div className="flex items-start gap-4">
+                <div className="glass-panel border-primary/20 p-3 mt-1">
+                    <Phone className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                    <h3 className="font-headline text-lg text-white uppercase tracking-widest">Contact Number</h3>
+                    <a href="tel:+919512070112" className="text-muted-foreground font-light hover:text-primary transition-colors">+91 9512070112</a>
                 </div>
             </div>
           </div>
