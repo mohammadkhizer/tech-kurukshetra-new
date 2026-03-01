@@ -4,7 +4,7 @@ import { Event } from './types';
 export const eventsData: Event[] = [
   {
     slug: 'flagship-hackathon',
-    title: 'Flagship Hackathon',
+    name: 'Flagship Hackathon',
     isTechnical: true,
     category: 'Development',
     description: 'A 24-hour coding marathon to build innovative solutions.',
@@ -12,7 +12,6 @@ export const eventsData: Event[] = [
     imgId: 'hero-tech',
     iconName: 'Code',
     color: 'text-primary',
-    prize: '$2,000 Prize Pool',
     rules: [
       'Teams of 2-4 members.',
       'All code must be written during the event.',
@@ -22,7 +21,7 @@ export const eventsData: Event[] = [
   },
   {
     slug: 'project-exhibition',
-    title: 'Project Exhibition',
+    name: 'Project Exhibition',
     isTechnical: true,
     category: 'Showcase',
     description: 'Showcase your best projects to industry experts and peers.',
@@ -30,7 +29,6 @@ export const eventsData: Event[] = [
     imgId: 'team-member-1',
     iconName: 'Rocket',
     color: 'text-primary',
-    prize: 'Best Project Award',
     rules: [
         'Individual or team participation.',
         'Projects can be from any domain of technology.',
@@ -39,7 +37,7 @@ export const eventsData: Event[] = [
   },
   {
     slug: 'robo-rush',
-    title: 'ROBO Rush',
+    name: 'ROBO Rush',
     isTechnical: true,
     category: 'Robotics',
     description: 'Navigate your autonomous robot through a challenging obstacle course.',
@@ -47,7 +45,6 @@ export const eventsData: Event[] = [
     imgId: 'team-member-2',
     iconName: 'Cpu',
     color: 'text-primary',
-    prize: '$1,000 and Robotics Kit',
     rules: [
       'Teams of up to 4 members.',
       'Robot must be autonomous.',
@@ -56,7 +53,7 @@ export const eventsData: Event[] = [
   },
   {
     slug: 'maths-quiz',
-    title: 'Maths Quiz',
+    name: 'Maths Quiz',
     isTechnical: false,
     category: 'Logic',
     description: 'A battle of wits for mathematics enthusiasts.',
@@ -64,7 +61,6 @@ export const eventsData: Event[] = [
     imgId: 'team-rahil',
     iconName: 'BrainCircuit',
     color: 'text-accent',
-    prize: 'The Golden Calculator Trophy',
     rules: [
         'Individual participation.',
         'Multiple rounds with increasing difficulty.',
@@ -73,7 +69,7 @@ export const eventsData: Event[] = [
   },
   {
     slug: 'esports-tournament',
-    title: 'eSports Tournament',
+    name: 'eSports Tournament',
     isTechnical: false,
     category: 'Gaming',
     description: 'Compete in popular mobile games for glory.',
@@ -81,7 +77,6 @@ export const eventsData: Event[] = [
     imgId: 'team-khizer',
     iconName: 'Gamepad2',
     color: 'text-accent',
-    prize: 'Gaming Peripherals & Cash Prizes',
     rules: [
         'Team-based and solo events.',
         'Games include BGMI and Free Fire.',
@@ -90,7 +85,7 @@ export const eventsData: Event[] = [
   },
   {
     slug: 'treasure-hunt',
-    title: 'Treasure Hunt',
+    name: 'Treasure Hunt',
     isTechnical: false,
     category: 'Adventure',
     description: 'A fun-filled treasure hunt with clues hidden across the campus.',
@@ -98,7 +93,6 @@ export const eventsData: Event[] = [
     imgId: 'hero-tech',
     iconName: 'Map',
     color: 'text-accent',
-    prize: 'A chest of secret goodies',
     rules: [
         'Teams of 2-4 members.',
         'First team to solve all clues and find the treasure wins.',
@@ -106,3 +100,5 @@ export const eventsData: Event[] = [
     ],
   },
 ];
+
+    

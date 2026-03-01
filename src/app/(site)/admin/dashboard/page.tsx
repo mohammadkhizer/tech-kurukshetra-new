@@ -61,12 +61,8 @@ import {
   Clock,
   MapPin,
   Megaphone,
-  Link as LinkIcon,
-  Share2,
-  Twitter,
-  Instagram,
-  MessageSquare,
   Mail,
+  MessageSquare,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { eventsData as INITIAL_EVENTS } from '@/lib/events-data';
@@ -81,15 +77,6 @@ const architectCategories = [
   "Decoration",
   "Promotion",
   "Management planing and operational Team"
-];
-
-const footerLinkCategories = ["Festival", "Connect", "Legal"];
-const socialPlatforms = [
-    { name: 'Instagram', icon: 'Instagram' },
-    { name: 'Twitter', icon: 'Twitter' },
-    { name: 'LinkedIn', icon: 'Linkedin' },
-    { name: 'Github', icon: 'Github' },
-    { name: 'Mail', icon: 'Mail' },
 ];
 
 export default function DashboardPage() {
@@ -144,12 +131,6 @@ export default function DashboardPage() {
   const announcementsQuery = useMemoFirebase(() => isAuthorized ? query(collection(firestore, 'announcements'), orderBy('timestamp', 'desc')) : null, [isAuthorized, firestore]);
   const { data: announcements, isLoading: announcementsLoading } = useCollection(announcementsQuery);
 
-  const footerLinksQuery = useMemoFirebase(() => isAuthorized ? query(collection(firestore, 'footerLinks'), orderBy('displayOrder')) : null, [isAuthorized, firestore]);
-  const { data: footerLinks, isLoading: footerLinksLoading } = useCollection(footerLinksQuery);
-
-  const socialLinksQuery = useMemoFirebase(() => isAuthorized ? query(collection(firestore, 'socialMediaLinks'), orderBy('displayOrder')) : null, [isAuthorized, firestore]);
-  const { data: socialLinks, isLoading: socialLinksLoading } = useCollection(socialLinksQuery);
-
   const contactMessagesQuery = useMemoFirebase(() => isAuthorized ? query(collection(firestore, 'contactMessages'), orderBy('submittedAt', 'desc')) : null, [isAuthorized, firestore]);
   const { data: contactMessages, isLoading: contactMessagesLoading } = useCollection(contactMessagesQuery);
 
@@ -158,27 +139,19 @@ export default function DashboardPage() {
     teamMembers?.slice().sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)) || [],
     [teamMembers]
   );
-
-  const sortedFooterLinks = useMemo(() =>
-    footerLinks?.slice().sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)) || [],
-    [footerLinks]
-  );
-  
-  const sortedSocialLinks = useMemo(() =>
-    socialLinks?.slice().sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)) || [],
-    [socialLinks]
-  );
   
   const adminIds = useMemo(() => new Set(admins?.map(admin => admin.id)), [admins]);
 
   const [newSponsor, setNewSponsor] = useState({ name: '', logoUrl: '', tier: 'Platinum' });
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
+  
+  const [currentRule, setCurrentRule] = useState('');
   const [newEvent, setNewEvent] = useState({
     name: '',
     type: 'Technical',
     description: '',
     eventHead: '',
-    rules: '',
+    rules: [] as string[],
     registrationFee: '',
     organiserContact: '',
     imageUrl: '',
@@ -186,8 +159,9 @@ export default function DashboardPage() {
     location: '',
     festivalDayId: '',
   });
+
   const [heroContent, setHeroContent] = useState({ mainHeadline: '', subHeadline: '', description: '' });
-  const [counterStats, setCounterStats] = useState({ competitions: '10+', workshops: '5+', participants: '50K+', prizePool: '$10K+' });
+  const [counterStats, setCounterStats] = useState({ competitions: '10+', prizePool: '$10K+' });
   const [newArchitect, setNewArchitect] = useState({
     fullName: '',
     role: 'Student Organizer',
@@ -202,12 +176,6 @@ export default function DashboardPage() {
   const [editingArchitect, setEditingArchitect] = useState<any | null>(null);
   const [newDay, setNewDay] = useState({ name: '', date: '' });
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
-  
-  const [newFooterLink, setNewFooterLink] = useState({ title: '', url: '', category: 'Festival', displayOrder: 0 });
-  const [editingFooterLink, setEditingFooterLink] = useState<any | null>(null);
-
-  const [newSocialLink, setNewSocialLink] = useState({ platform: 'Instagram', url: '#', iconName: 'Instagram', displayOrder: 0 });
-  const [editingSocialLink, setEditingSocialLink] = useState<any | null>(null);
   
   const [editingRegistration, setEditingRegistration] = useState<any | null>(null);
 
@@ -233,8 +201,6 @@ export default function DashboardPage() {
     if (counterData) {
         setCounterStats({
             competitions: counterData.competitions || '',
-            workshops: counterData.workshops || '',
-            participants: counterData.participants || '',
             prizePool: counterData.prizePool || '',
         });
     }
@@ -296,6 +262,17 @@ export default function DashboardPage() {
   const handleEventDayChange = (value: string) => {
     setNewEvent(prev => ({ ...prev, festivalDayId: value }));
   };
+  
+  const handleAddRule = () => {
+    if (currentRule.trim() !== '') {
+      setNewEvent(prev => ({ ...prev, rules: [...prev.rules, currentRule.trim()] }));
+      setCurrentRule('');
+    }
+  };
+
+  const handleDeleteRule = (index: number) => {
+    setNewEvent(prev => ({ ...prev, rules: prev.rules.filter((_, i) => i !== index) }));
+  };
 
 
   const handleAddEvent = () => {
@@ -311,12 +288,11 @@ export default function DashboardPage() {
             id: slug,
             isTechnical: newEvent.type === 'Technical',
             longDescription: newEvent.description,
-            rules: newEvent.rules.split('\n').filter(rule => rule.trim() !== ''),
+            rules: newEvent.rules,
             startTime: newEvent.startTime ? new Date(newEvent.startTime).toISOString() : '',
             imgId: "hero-tech",
             iconName: newEvent.type === 'eSports' ? 'Gamepad2' : (newEvent.type === 'Technical' ? 'Code' : 'BrainCircuit'),
             color: newEvent.type === 'Technical' ? "text-primary" : "text-accent",
-            prize: "TBD",
         };
         const eventDocRef = doc(firestore, 'events', slug);
         setDocumentNonBlocking(eventDocRef, eventData, { merge: true });
@@ -338,7 +314,7 @@ export default function DashboardPage() {
         type: event.type || 'Technical',
         description: event.description || '',
         eventHead: event.eventHead || '',
-        rules: Array.isArray(event.rules) ? event.rules.join('\n') : '',
+        rules: Array.isArray(event.rules) ? event.rules : [],
         registrationFee: event.registrationFee || '',
         organiserContact: event.organiserContact || '',
         imageUrl: event.imageUrl || '',
@@ -346,11 +322,13 @@ export default function DashboardPage() {
         location: event.location || '',
         festivalDayId: event.festivalDayId || '',
     });
+    setCurrentRule('');
   };
 
   const handleCancelEdit = () => {
     setEditingEvent(null);
-    setNewEvent({ name: '', type: 'Technical', description: '', eventHead: '', rules: '', registrationFee: '', organiserContact: '', imageUrl: '', startTime: '', location: '', festivalDayId: '' });
+    setNewEvent({ name: '', type: 'Technical', description: '', eventHead: '', rules: [], registrationFee: '', organiserContact: '', imageUrl: '', startTime: '', location: '', festivalDayId: '' });
+    setCurrentRule('');
   };
 
   const handleUpdateEvent = () => {
@@ -369,7 +347,7 @@ export default function DashboardPage() {
         description: newEvent.description,
         longDescription: newEvent.description,
         eventHead: newEvent.eventHead,
-        rules: newEvent.rules.split('\n').filter(rule => rule.trim() !== ''),
+        rules: newEvent.rules,
         registrationFee: newEvent.registrationFee,
         organiserContact: newEvent.organiserContact,
         imageUrl: newEvent.imageUrl,
@@ -389,7 +367,7 @@ export default function DashboardPage() {
     if (eventsQuery) {
         INITIAL_EVENTS.forEach(event => {
             const eventDocRef = doc(firestore, 'events', event.slug);
-            const eventData = { ...event, name: event.title, id: event.slug };
+            const eventData = { ...event, id: event.slug };
             setDocumentNonBlocking(eventDocRef, eventData, { merge: true });
         });
         toast({ title: "Database Seeded", description: "Initial event data has been deployed to Firestore." });
@@ -494,6 +472,27 @@ export default function DashboardPage() {
       toast({ title: "Day Removed", description: "The festival day has been removed from the timeline." });
   };
 
+  const handleSeedDays = () => {
+    if (!isAuthorized) return;
+    const daysToSeed = [
+        { name: 'Day 1', date: '2026-04-10', description: 'Opening Ceremony and Technical Events' },
+        { name: 'Day 2', date: '2026-04-11', description: 'Non-Technical Events and Closing Ceremony' },
+    ];
+
+    daysToSeed.forEach(day => {
+        const id = day.name.toLowerCase().replace(/\s+/g, '-');
+        const dayData = {
+            name: day.name,
+            id: id,
+            date: new Date(day.date).toISOString(),
+            description: day.description
+        };
+        const dayDocRef = doc(firestore, 'festivalDays', id);
+        setDocumentNonBlocking(dayDocRef, dayData, { merge: true });
+    });
+    toast({ title: "Timeline Seeded", description: "Initial festival days have been deployed." });
+  };
+
   const handleNewAnnouncementChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value } = e.target;
       setNewAnnouncement(prev => ({ ...prev, [name]: value }));
@@ -524,92 +523,6 @@ export default function DashboardPage() {
       const announcementDocRef = doc(firestore, 'announcements', id);
       deleteDocumentNonBlocking(announcementDocRef);
       toast({ title: "Announcement Retracted", description: "The announcement has been removed." });
-  };
-
-  const handleNewFooterLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type } = e.target;
-    setNewFooterLink(prev => ({ ...prev, [name]: type === 'number' ? (parseInt(value, 10) || 0) : value }));
-  };
-  const handleFooterLinkCategoryChange = (value: string) => {
-    setNewFooterLink(prev => ({ ...prev, category: value }));
-  };
-  const handleAddFooterLink = () => {
-    if (!newFooterLink.title || !newFooterLink.url) {
-        toast({ variant: "destructive", title: "Incomplete Data", description: "Link title and URL are required." });
-        return;
-    }
-    if (isAuthorized) {
-        const id = Math.random().toString(36).substr(2, 9);
-        const colRef = collection(firestore, 'footerLinks');
-        addDocumentNonBlocking(colRef, { ...newFooterLink, id });
-        setNewFooterLink({ title: '', url: '', category: 'Festival', displayOrder: 0 });
-        toast({ title: "Footer Link Added" });
-    }
-  };
-  const handleDeleteFooterLink = (id: string) => {
-      const linkDocRef = doc(firestore, 'footerLinks', id);
-      deleteDocumentNonBlocking(linkDocRef);
-      toast({ title: "Footer Link Removed" });
-  };
-  const handleFooterLinkEditClick = (link: any) => {
-    setEditingFooterLink(link);
-    setNewFooterLink({ ...link });
-  };
-  const handleCancelFooterLinkEdit = () => {
-    setEditingFooterLink(null);
-    setNewFooterLink({ title: '', url: '', category: 'Festival', displayOrder: 0 });
-  };
-  const handleUpdateFooterLink = () => {
-    if (!editingFooterLink) return;
-    const linkDocRef = doc(firestore, 'footerLinks', editingFooterLink.id);
-    setDocumentNonBlocking(linkDocRef, newFooterLink, { merge: true });
-    toast({ title: "Footer Link Updated" });
-    handleCancelFooterLinkEdit();
-  };
-
-
-  const handleNewSocialLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type } = e.target;
-    setNewSocialLink(prev => ({ ...prev, [name]: type === 'number' ? (parseInt(value, 10) || 0) : value }));
-  };
-  const handleSocialPlatformChange = (value: string) => {
-    const platform = socialPlatforms.find(p => p.name === value);
-    if (platform) {
-        setNewSocialLink(prev => ({...prev, platform: platform.name, iconName: platform.icon}));
-    }
-  };
-  const handleAddSocialLink = () => {
-    if (!newSocialLink.platform || !newSocialLink.url) {
-        toast({ variant: "destructive", title: "Incomplete Data", description: "Platform and URL are required." });
-        return;
-    }
-    if (isAuthorized) {
-        const id = Math.random().toString(36).substr(2, 9);
-        const colRef = collection(firestore, 'socialMediaLinks');
-        addDocumentNonBlocking(colRef, { ...newSocialLink, id });
-        setNewSocialLink({ platform: 'Instagram', url: '#', iconName: 'Instagram', displayOrder: 0 });
-        toast({ title: "Social Link Added" });
-    }
-  };
-  const handleDeleteSocialLink = (id: string) => {
-      const linkDocRef = doc(firestore, 'socialMediaLinks', id);
-      deleteDocumentNonBlocking(linkDocRef);
-      toast({ title: "Social Link Removed" });
-  };
-  const handleSocialLinkEditClick = (link: any) => {
-    setEditingSocialLink(link);
-    setNewSocialLink({ ...link });
-  };
-  const handleCancelSocialLinkEdit = () => {
-    setEditingSocialLink(null);
-    setNewSocialLink({ platform: 'Instagram', url: '#', iconName: 'Instagram', displayOrder: 0 });
-  };
-  const handleUpdateSocialLink = () => {
-    if (!editingSocialLink) return;
-    const linkDocRef = doc(firestore, 'socialMediaLinks', editingSocialLink.id);
-    setDocumentNonBlocking(linkDocRef, newSocialLink, { merge: true });
-    toast({ title: "Social Link Updated" });
-    handleCancelSocialLinkEdit();
   };
 
   const handleToggleRead = (id: string, currentStatus: boolean) => {
@@ -694,6 +607,17 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDeleteAdminUser = (userId: string) => {
+    if (!isAuthorized) return;
+    const adminUserDocRef = doc(firestore, 'admin_users', userId);
+    deleteDocumentNonBlocking(adminUserDocRef);
+
+    const adminRoleDocRef = doc(firestore, 'roles_admin', userId);
+    deleteDocumentNonBlocking(adminRoleDocRef); // Also remove their admin role if it exists
+    
+    toast({ title: "User Deleted", description: "The admin user record has been removed." });
+  };
+
   if (isUserLoading || isAdminLoading) {
     return (
         <div className="min-h-screen pt-48 pb-20 px-6 flex flex-col items-center justify-center text-center">
@@ -740,14 +664,13 @@ export default function DashboardPage() {
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-8" onValueChange={(value) => { setActiveTab(value); handleCancelEdit(); handleCancelArchitectEdit(); }}>
-        <TabsList className="grid grid-cols-5 md:grid-cols-10 bg-white/5 rounded-none p-1 border border-white/10">
+        <TabsList className="grid grid-cols-5 md:grid-cols-9 bg-white/5 rounded-none p-1 border border-white/10">
           <TabsTrigger value="dashboard" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Dashboard</TabsTrigger>
           <TabsTrigger value="home" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Home</TabsTrigger>
           <TabsTrigger value="events" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Events</TabsTrigger>
           <TabsTrigger value="schedule" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Schedule</TabsTrigger>
           <TabsTrigger value="announcements" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Announcements</TabsTrigger>
           <TabsTrigger value="team" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Team</TabsTrigger>
-          <TabsTrigger value="footer" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Footer</TabsTrigger>
           <TabsTrigger value="registrations" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Registrations</TabsTrigger>
           <TabsTrigger value="admins" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Admins</TabsTrigger>
           <TabsTrigger value="messages" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Messages</TabsTrigger>
@@ -841,7 +764,7 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase tracking-widest">Competitions</Label>
                   <Input 
@@ -851,24 +774,7 @@ export default function DashboardPage() {
                     placeholder="10+" 
                     className="bg-white/5 border-white/10 rounded-none" />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] uppercase tracking-widest">Workshops</Label>
-                  <Input 
-                    name="workshops"
-                    value={counterStats.workshops}
-                    onChange={handleCounterInputChange}
-                    placeholder="5+" 
-                    className="bg-white/5 border-white/10 rounded-none" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] uppercase tracking-widest">Participants</Label>
-                  <Input 
-                    name="participants"
-                    value={counterStats.participants}
-                    onChange={handleCounterInputChange}
-                    placeholder="50K+" 
-                    className="bg-white/5 border-white/10 rounded-none" />
-                </div>
+                
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase tracking-widest">Prize Pool</Label>
                   <Input 
@@ -999,9 +905,15 @@ export default function DashboardPage() {
                           <SelectValue placeholder="Select a day" />
                       </SelectTrigger>
                       <SelectContent className="bg-black/80 backdrop-blur-md border-white/10 text-white rounded-none">
-                          {festivalDays?.map(day => (
-                              <SelectItem key={day.id} value={day.id}>{day.name}</SelectItem>
-                          ))}
+                          {festivalDays && festivalDays.length > 0 ? (
+                            festivalDays.map(day => (
+                                <SelectItem key={day.id} value={day.id}>{day.name}</SelectItem>
+                            ))
+                          ) : (
+                            <div className="text-muted-foreground text-xs p-4 text-center">
+                                Go to the 'Schedule' tab to add days.
+                            </div>
+                          )}
                       </SelectContent>
                   </Select>
                 </div>
@@ -1021,9 +933,43 @@ export default function DashboardPage() {
                   <Label className="text-[10px] uppercase tracking-widest">Event Head</Label>
                   <Input name="eventHead" value={newEvent.eventHead} onChange={handleNewEventChange} className="bg-white/5 border-white/10 rounded-none" />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] uppercase tracking-widest">Event Rules (one rule per line)</Label>
-                  <Textarea name="rules" value={newEvent.rules} onChange={handleNewEventChange} className="bg-white/5 border-white/10 rounded-none" />
+                 <div className="space-y-2">
+                    <Label className="text-[10px] uppercase tracking-widest">Event Rules</Label>
+                    <div className="flex gap-2">
+                        <Input
+                            value={currentRule}
+                            onChange={(e) => setCurrentRule(e.target.value)}
+                            placeholder="Type a rule and click Add"
+                            className="bg-white/5 border-white/10 rounded-none"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleAddRule();
+                                }
+                            }}
+                        />
+                        <Button type="button" onClick={handleAddRule} className="bg-primary hover:bg-primary/80 rounded-none px-4 text-background">
+                            Add
+                        </Button>
+                    </div>
+                    <div className="space-y-2 pt-2 max-h-40 overflow-y-auto">
+                        {newEvent.rules.length > 0 ? newEvent.rules.map((rule, index) => (
+                            <div key={index} className="flex items-center justify-between text-sm glass-panel p-2 border-white/5 bg-white/5 rounded-none">
+                                <span className="text-muted-foreground break-all">{rule}</span>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDeleteRule(index)}
+                                    className="text-muted-foreground hover:text-destructive h-6 w-6 ml-2 flex-shrink-0"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        )) : (
+                            <p className="text-xs text-muted-foreground text-center py-2">No rules added yet.</p>
+                        )}
+                    </div>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase tracking-widest">Registration Fee</Label>
@@ -1098,6 +1044,9 @@ export default function DashboardPage() {
                     </div>
                     <Button onClick={handleAddDay} className="w-full bg-primary text-background hover:bg-primary/80 rounded-none font-headline tracking-widest text-[10px] py-4 uppercase">
                         ADD DAY
+                    </Button>
+                    <Button onClick={handleSeedDays} variant="outline" className="w-full border-accent/20 text-accent hover:bg-accent/10 rounded-none font-headline tracking-widest text-[10px] py-4 uppercase">
+                      <DatabaseZap className="w-4 h-4 mr-2" /> SEED INITIAL DAYS
                     </Button>
                 </CardContent>
             </Card>
@@ -1276,96 +1225,6 @@ export default function DashboardPage() {
           </div>
         </TabsContent>
         
-        <TabsContent value="footer">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card className="glass-panel border-primary/20 rounded-none bg-black/40">
-              <CardHeader>
-                <CardTitle className="font-headline text-lg tracking-widest flex items-center gap-2 uppercase">
-                  <LinkIcon className="w-5 h-5 text-primary" /> Footer Nav Links
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {/* Form to add/edit */}
-                <div className="flex gap-2 mb-4">
-                  <Input name="title" value={newFooterLink.title} onChange={handleNewFooterLinkChange} placeholder="Link Title" className="bg-white/5 border-white/10 rounded-none" />
-                  <Input name="url" value={newFooterLink.url} onChange={handleNewFooterLinkChange} placeholder="URL" className="bg-white/5 border-white/10 rounded-none" />
-                  <Select value={newFooterLink.category} onValueChange={handleFooterLinkCategoryChange}>
-                    <SelectTrigger className="w-[180px] bg-white/5 border-white/10 rounded-none"><SelectValue /></SelectTrigger>
-                    <SelectContent className="bg-black/80 backdrop-blur-md border-white/10 text-white rounded-none">
-                      {footerLinkCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Input name="displayOrder" type="number" value={newFooterLink.displayOrder} onChange={handleNewFooterLinkChange} className="w-20 bg-white/5 border-white/10 rounded-none" />
-                  <Button onClick={editingFooterLink ? handleUpdateFooterLink : handleAddFooterLink} className="bg-primary text-background hover:bg-primary/80 rounded-none">
-                    {editingFooterLink ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                  </Button>
-                  {editingFooterLink && <Button onClick={handleCancelFooterLinkEdit} variant="secondary" className="rounded-none">X</Button>}
-                </div>
-                {/* Table of links */}
-                <Table>
-                  <TableHeader><TableRow><TableHead>Order</TableHead><TableHead>Title</TableHead><TableHead>URL</TableHead><TableHead>Category</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                  <TableBody>
-                    {footerLinksLoading && <TableRow><TableCell colSpan={5}><Loader2 className="mx-auto animate-spin" /></TableCell></TableRow>}
-                    {sortedFooterLinks.map(link => (
-                      <TableRow key={link.id} className="text-xs">
-                        <TableCell>{link.displayOrder}</TableCell>
-                        <TableCell>{link.title}</TableCell>
-                        <TableCell className="text-muted-foreground truncate max-w-xs">{link.url}</TableCell>
-                        <TableCell><Badge variant="outline" className="text-primary border-primary/40 text-[9px] uppercase">{link.category}</Badge></TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => handleFooterLinkEditClick(link)}><Pencil className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteFooterLink(link.id)}><Trash2 className="w-4 h-4" /></Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-            
-            <Card className="glass-panel border-accent/20 rounded-none bg-black/40">
-              <CardHeader>
-                <CardTitle className="font-headline text-lg tracking-widest flex items-center gap-2 uppercase">
-                  <Share2 className="w-5 h-5 text-accent" /> Social Media Links
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                 <div className="flex gap-2 mb-4">
-                  <Select value={newSocialLink.platform} onValueChange={handleSocialPlatformChange}>
-                    <SelectTrigger className="w-[180px] bg-white/5 border-white/10 rounded-none"><SelectValue /></SelectTrigger>
-                    <SelectContent className="bg-black/80 backdrop-blur-md border-white/10 text-white rounded-none">
-                      {socialPlatforms.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Input name="url" value={newSocialLink.url} onChange={handleNewSocialLinkChange} placeholder="URL" className="bg-white/5 border-white/10 rounded-none" />
-                  <Input name="displayOrder" type="number" value={newSocialLink.displayOrder} onChange={handleNewSocialLinkChange} className="w-20 bg-white/5 border-white/10 rounded-none" />
-                  <Button onClick={editingSocialLink ? handleUpdateSocialLink : handleAddSocialLink} className="bg-accent text-background hover:bg-accent/80 rounded-none">
-                    {editingSocialLink ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                  </Button>
-                  {editingSocialLink && <Button onClick={handleCancelSocialLinkEdit} variant="secondary" className="rounded-none">X</Button>}
-                </div>
-                <Table>
-                  <TableHeader><TableRow><TableHead>Order</TableHead><TableHead>Platform</TableHead><TableHead>URL</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                  <TableBody>
-                    {socialLinksLoading && <TableRow><TableCell colSpan={4}><Loader2 className="mx-auto animate-spin" /></TableCell></TableRow>}
-                    {sortedSocialLinks.map(link => (
-                      <TableRow key={link.id} className="text-xs">
-                        <TableCell>{link.displayOrder}</TableCell>
-                        <TableCell>{link.platform}</TableCell>
-                        <TableCell className="text-muted-foreground truncate max-w-xs">{link.url}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => handleSocialLinkEditClick(link)}><Pencil className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteSocialLink(link.id)}><Trash2 className="w-4 h-4" /></Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
         <TabsContent value="registrations">
           <Card className="glass-panel border-primary/20 rounded-none bg-black/40">
             <CardHeader className="flex flex-row justify-between items-center">
@@ -1548,16 +1407,43 @@ export default function DashboardPage() {
                                 )}
                             </TableCell>
                             <TableCell className="text-right">
-                                <Button
-                                    variant={isAdmin ? "destructive" : "secondary"}
-                                    size="sm"
-                                    className="text-[10px] font-headline tracking-widest rounded-none uppercase disabled:opacity-50"
-                                    onClick={() => handleToggleAdmin(adminUser.id, isAdmin)}
-                                    disabled={isSelf}
-                                    title={isSelf ? "Cannot change your own role" : ""}
-                                >
-                                    {isAdmin ? "Revoke Access" : "Grant Access"}
-                                </Button>
+                                <div className="flex items-center justify-end gap-2">
+                                    <Button
+                                        variant={isAdmin ? "destructive" : "secondary"}
+                                        size="sm"
+                                        className="text-[10px] font-headline tracking-widest rounded-none uppercase disabled:opacity-50"
+                                        onClick={() => handleToggleAdmin(adminUser.id, isAdmin)}
+                                        disabled={isSelf}
+                                        title={isSelf ? "Cannot change your own role" : ""}
+                                    >
+                                        {isAdmin ? "Revoke Access" : "Grant Access"}
+                                    </Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-muted-foreground hover:text-destructive h-9 w-9 disabled:opacity-50"
+                                            disabled={isSelf}
+                                            title={isSelf ? "Cannot delete your own account" : "Delete user record"}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent className="glass-panel border-destructive/40 bg-black/60 rounded-none">
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle className="font-headline text-destructive uppercase">Confirm Deletion</AlertDialogTitle>
+                                            <AlertDialogDescription className="text-muted-foreground">
+                                            Are you sure you want to delete the user record for {adminUser.fullName}? This removes them from the admin system but does not delete their authentication account. This action cannot be undone.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel className="rounded-none uppercase text-xs tracking-widest">Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteAdminUser(adminUser.id)} className="bg-destructive hover:bg-destructive/80 rounded-none uppercase text-xs tracking-widest">Delete User</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
                             </TableCell>
                         </TableRow>
                     );

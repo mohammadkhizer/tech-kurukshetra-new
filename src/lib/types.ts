@@ -1,7 +1,7 @@
 
 export type Event = {
   slug: string;
-  title: string;
+  name: string;
   isTechnical: boolean;
   category: string;
   description: string;
@@ -9,7 +9,6 @@ export type Event = {
   imgId: string;
   iconName: string;
   color: string;
-  prize: string;
   rules: string[];
 };
 
@@ -28,3 +27,5 @@ export type Registration = {
   events: string[];
   registeredAt: Date;
 };
+
+    

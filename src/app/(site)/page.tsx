@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ArrowRight, Code, Zap, Globe, Cpu, Loader2, Lightbulb, Users, Trophy } from 'lucide-react';
+import { ArrowRight, Code, Globe, Cpu, Loader2, Lightbulb, Users, Trophy } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,7 +13,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const statsConfig = [
     { icon: Code, label: "Competitions", key: "competitions", defaultValue: "10+" },
-    { icon: Zap, label: "Workshops", key: "workshops", defaultValue: "5+" },
     { icon: Globe, label: "Participants", key: "participants", defaultValue: "50K+" },
     { icon: Cpu, label: "Prize Pool", key: "prizePool", defaultValue: "$10K+" }
 ];
@@ -98,7 +97,7 @@ export default function Home() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full mb-32">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full mb-32">
             {counterDataLoading ? (
               statsConfig.map((_, i) => (
                   <div key={i} className="glass-card p-6 rounded-none flex flex-col items-center">
@@ -122,7 +121,7 @@ export default function Home() {
           </div>
         </div>
         
-        <section className="py-20">
+        <section id="about" className="py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="relative h-full min-h-[300px] lg:min-h-[500px]">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/20 blur-3xl" />

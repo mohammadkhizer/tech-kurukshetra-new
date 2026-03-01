@@ -1,28 +1,45 @@
+
 'use client';
 
 import { useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import * as LucideIcons from 'lucide-react';
-import { ArrowLeft, Calendar, MapPin, Trophy, ShieldCheck, ListChecks, CircleHelp, Loader2 } from 'lucide-react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, limit } from 'firebase/firestore';
+import { ArrowLeft, Calendar, MapPin, ShieldCheck, ListChecks, CircleHelp, Loader2, User, Phone, Tag } from 'lucide-react';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
-export default function ArenaDetailPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default function ArenaDetailPage() {
+  const params = useParams();
+  const slug = params.slug as string;
   const firestore = useFirestore();
 
-  const eventQuery = useMemoFirebase(() => 
-      firestore ? query(collection(firestore, 'events'), where('slug', '==', slug), limit(1)) : null, 
+  const eventRef = useMemoFirebase(() => 
+      firestore ? doc(firestore, 'events', slug) : null, 
       [firestore, slug]
   );
-  const { data: eventData, isLoading } = useCollection(eventQuery);
-  const event = useMemo(() => eventData?.[0], [eventData]);
+  const { data: event, isLoading } = useDoc(eventRef);
 
-  if (isLoading) {
+  const festivalDayRef = useMemoFirebase(() => 
+    (firestore && event?.festivalDayId) ? doc(firestore, 'festivalDays', event.festivalDayId) : null,
+    [firestore, event]
+  );
+  const { data: festivalDay, isLoading: festivalDayLoading } = useDoc(festivalDayRef);
+  
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Date TBD';
+    return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    });
+  }
+
+  if (isLoading || festivalDayLoading) {
     return (
       <div className="pt-32 pb-40 px-6 max-w-5xl mx-auto min-h-screen flex items-center justify-center">
         <Loader2 className="w-12 h-12 text-primary animate-spin" />
@@ -67,24 +84,35 @@ export default function ArenaDetailPage({ params }: { params: { slug: string } }
               className="object-cover grayscale"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
-            <div className="absolute bottom-6 left-6">
-               <Icon className={`w-12 h-12 ${event.color}`} />
-            </div>
           </div>
 
           <div className="glass-panel p-6 border-primary/10 rounded-none space-y-4">
             <div className="flex items-center gap-3 text-muted-foreground text-sm">
               <Calendar className="w-4 h-4 text-primary" />
-              <span className="uppercase tracking-widest font-headline text-[10px]">TBD - Neon Horizon 2026</span>
+              <span className="uppercase tracking-widest font-headline text-[10px]">{festivalDay ? formatDate(festivalDay.date) : 'Date TBD'}</span>
             </div>
             <div className="flex items-center gap-3 text-muted-foreground text-sm">
               <MapPin className="w-4 h-4 text-primary" />
-              <span className="uppercase tracking-widest font-headline text-[10px]">Main Campus Tech Hub</span>
+              <span className="uppercase tracking-widest font-headline text-[10px]">{event.location || 'Location TBD'}</span>
             </div>
-            <div className="flex items-center gap-3 text-accent text-sm font-bold">
-              <Trophy className="w-4 h-4" />
-              <span className="uppercase tracking-widest font-headline text-[10px]">{event.prize}</span>
-            </div>
+             {event.registrationFee && (
+              <div className="flex items-center gap-3 text-muted-foreground text-sm">
+                <Tag className="w-4 h-4 text-primary" />
+                <span className="uppercase tracking-widest font-headline text-[10px]">{event.registrationFee}</span>
+              </div>
+            )}
+             {event.eventHead && (
+              <div className="flex items-center gap-3 text-muted-foreground text-sm">
+                <User className="w-4 h-4 text-primary" />
+                <span className="uppercase tracking-widest font-headline text-[10px]">{event.eventHead}</span>
+              </div>
+            )}
+            {event.organiserContact && (
+              <div className="flex items-center gap-3 text-muted-foreground text-sm">
+                <Phone className="w-4 h-4 text-primary" />
+                <span className="uppercase tracking-widest font-headline text-[10px]">{event.organiserContact}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -96,9 +124,6 @@ export default function ArenaDetailPage({ params }: { params: { slug: string } }
             <h1 className="font-headline text-5xl md:text-6xl tracking-tighter text-white mb-6 uppercase">
               {event.name}
             </h1>
-            <p className="text-xl text-muted-foreground font-light leading-relaxed italic border-l-2 border-primary/40 pl-6">
-              {event.description}
-            </p>
           </div>
 
           <div className="space-y-6">
@@ -114,14 +139,15 @@ export default function ArenaDetailPage({ params }: { params: { slug: string } }
             <h2 className="font-headline text-xl text-accent tracking-widest uppercase flex items-center gap-3">
               <ListChecks className="w-5 h-5" /> Entry Constraints
             </h2>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {event.rules.map((rule: string, idx: number) => (
-                <li key={idx} className="flex items-start gap-3 text-sm text-muted-foreground glass-panel p-4 border-white/5 bg-white/5 rounded-none">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-                  {rule}
-                </li>
-              ))}
-            </ul>
+            <div className="glass-panel p-6 border-white/5 bg-white/5 rounded-none">
+              <ul className="space-y-4">
+                {event.rules.map((rule: string, idx: number) => (
+                  <li key={idx} className="text-sm text-muted-foreground">
+                    <span>{rule}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           <div className="pt-8">
@@ -134,5 +160,3 @@ export default function ArenaDetailPage({ params }: { params: { slug: string } }
     </div>
   );
 }
-
-    

@@ -1,32 +1,38 @@
 
+
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CheckCircle2, Loader2, Sparkles, ShieldCheck, Zap, User, Mail, Phone, School, BookOpen, Trophy } from 'lucide-react';
 import Link from 'next/link';
-import { eventsData } from '@/lib/events-data';
-import { useAuth, useUser, setDocumentNonBlocking, initiateAnonymousSignIn, useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
-
-const technicalEvents = eventsData.filter(e => e.isTechnical);
-const nonTechnicalEvents = eventsData.filter(e => !e.isTechnical);
+import { useAuth, useUser, setDocumentNonBlocking, initiateAnonymousSignIn, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 
 export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading: isAuthLoading } = useUser();
   const auth = useAuth();
   const firestore = useFirestore();
 
+  const eventsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'events') : null, [firestore]);
+  const { data: events, isLoading: eventsLoading } = useCollection(eventsQuery);
+
+  const technicalEvents = useMemo(() => events?.filter((e: any) => e.isTechnical) || [], [events]);
+  const nonTechnicalEvents = useMemo(() => events?.filter((e: any) => !e.isTechnical) || [], [events]);
+  
+  const isUserLoading = isAuthLoading || !firestore;
+
+
   useEffect(() => {
-    if (!isUserLoading && !user) {
+    if (!isUserLoading && !user && firestore) {
       initiateAnonymousSignIn(auth);
     }
-  }, [isUserLoading, user, auth]);
+  }, [isUserLoading, user, auth, firestore]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -174,24 +180,24 @@ export default function RegisterPage() {
             
             <div className="space-y-2">
               <Label className="text-[10px] tracking-widest uppercase text-muted-foreground ml-1">Arena Track</Label>
-              <Select name="selectedEvent" required>
+              <Select name="selectedEvent" required disabled={eventsLoading}>
                 <SelectTrigger className="bg-white/5 border-white/10 rounded-none h-14 focus:border-primary focus:ring-primary uppercase tracking-widest text-[11px] text-white">
-                  <SelectValue placeholder="INITIALIZE ARENA SELECTION" />
+                  <SelectValue placeholder={eventsLoading ? "LOADING ARENAS..." : "INITIALIZE ARENA SELECTION"} />
                 </SelectTrigger>
                 <SelectContent className="glass-panel border-primary/30 text-white rounded-none bg-black/95 backdrop-blur-xl">
                   <SelectGroup>
                     <SelectLabel className="text-[10px] text-primary tracking-widest px-4 py-2 border-b border-white/5">TECHNICAL ARENAS</SelectLabel>
                     {technicalEvents.map(event => (
-                      <SelectItem key={event.slug} value={event.title} className="text-[10px] tracking-widest uppercase py-3 cursor-pointer">
-                        {event.title}
+                      <SelectItem key={event.slug} value={event.name} className="text-[10px] tracking-widest uppercase py-3 cursor-pointer">
+                        {event.name}
                       </SelectItem>
                     ))}
                   </SelectGroup>
                   <SelectGroup>
                     <SelectLabel className="text-[10px] text-accent tracking-widest px-4 py-2 border-b border-white/5 mt-2">NON-TECHNICAL ARENAS</SelectLabel>
                     {nonTechnicalEvents.map(event => (
-                      <SelectItem key={event.slug} value={event.title} className="text-[10px] tracking-widest uppercase py-3 cursor-pointer">
-                        {event.title}
+                      <SelectItem key={event.slug} value={event.name} className="text-[10px] tracking-widest uppercase py-3 cursor-pointer">
+                        {event.name}
                       </SelectItem>
                     ))}
                   </SelectGroup>

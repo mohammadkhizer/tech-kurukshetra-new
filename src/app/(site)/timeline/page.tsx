@@ -81,29 +81,27 @@ export default function TimelinePage() {
         </TabsList>
 
         {scheduleData.map((day) => (
-          <TabsContent key={day.id} value={day.id} className="space-y-8 mt-0 outline-none">
+          <TabsContent key={day.id} value={day.id} className="mt-0 outline-none">
             {day.events && day.events.length > 0 ? day.events.map((item: any, idx: number) => (
-              <div key={item.id || idx} className="relative pl-8 md:pl-12 border-l-2 border-primary/20 hover:border-primary transition-all duration-500 py-6 group animate-in fade-in slide-in-from-left">
-                <div className="absolute -left-[9px] top-7 w-4 h-4 rounded-none bg-background border-2 border-primary group-hover:bg-primary group-hover:rotate-45 transition-all duration-500" />
-                
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2 text-accent text-[10px] font-headline tracking-[0.2em] uppercase">
-                    <Clock className="w-3.5 h-3.5" />
-                    {formatTime(item.startTime)}
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground text-[9px] uppercase tracking-widest font-bold">
-                    <MapPin className="w-3 h-3 text-primary" />
-                    {item.location || "TBD"}
-                  </div>
-                </div>
+               <div key={item.id || idx} className="relative pl-8 md:pl-12 border-l-2 border-primary/20 group">
+                <div className="absolute -left-[9px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-none bg-background border-2 border-primary group-hover:bg-primary group-hover:rotate-45 transition-all duration-500" />
+                <div className="glass-panel p-6 border border-primary/10 bg-black/20 rounded-none ml-4 mb-8 group-hover:border-primary/40 transition-all duration-300 animate-in fade-in slide-in-from-left-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2 text-accent text-[10px] font-headline tracking-[0.2em] uppercase">
+                        <Clock className="w-3.5 h-3.5" />
+                        {formatTime(item.startTime)}
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground text-[9px] uppercase tracking-widest font-bold">
+                        <MapPin className="w-3 h-3 text-primary" />
+                        {item.location || "TBD"}
+                        </div>
+                    </div>
 
-                <h3 className="text-2xl font-headline mb-3 text-white group-hover:text-primary transition-colors tracking-tight uppercase">
-                  {item.name}
-                </h3>
-                <p className="text-muted-foreground font-light leading-relaxed text-sm max-w-2xl">
-                  {item.description}
-                </p>
-              </div>
+                    <h3 className="text-2xl font-headline text-white group-hover:text-primary transition-colors tracking-tight uppercase">
+                        {item.name}
+                    </h3>
+                </div>
+            </div>
             )) : (
               <div className="text-center text-muted-foreground py-10">No events scheduled for this day yet.</div>
             )}
