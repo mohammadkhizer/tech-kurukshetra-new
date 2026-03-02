@@ -64,7 +64,7 @@ export function SiteFooter() {
                         </li>
                         <li className="flex items-start gap-3">
                              <Instagram className="w-4 h-4 text-primary mt-1 shrink-0" />
-                            <a href="#" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Instagram</a>
+                            <a href="https://www.instagram.com/svgutechkurukshetra" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Instagram</a>
                         </li>
                     </ul>
                 </div>
