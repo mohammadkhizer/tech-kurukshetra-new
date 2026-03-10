@@ -12,7 +12,7 @@ export default function SiteLayout({
     <FirebaseClientProvider>
       <div className="flex min-h-screen flex-col">
           <header className="absolute top-8 left-8 z-40">
-              <Link href="/" className="flex items-center gap-3 group opacity-70 hover:opacity-100 transition-opacity">
+              <Link href="/" aria-label="Homepage" className="flex items-center gap-3 group opacity-70 hover:opacity-100 transition-opacity">
                 <div className="w-10 h-10 glass-panel border-primary/40 flex items-center justify-center group-hover:border-primary transition-colors">
                   <span className="font-headline text-primary font-bold">TK</span>
                 </div>

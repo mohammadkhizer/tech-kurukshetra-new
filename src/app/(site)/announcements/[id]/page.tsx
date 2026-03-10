@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
+import Script from 'next/script';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { ArrowLeft, Loader2, Megaphone } from 'lucide-react';
@@ -54,27 +55,60 @@ export default function AnnouncementDetailPage() {
     );
   }
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'NewsArticle',
+    headline: announcement.title,
+    datePublished: announcement.timestamp,
+    dateModified: announcement.timestamp,
+    description: announcement.content,
+    author: [{
+        '@type': 'Organization',
+        name: 'TECH KURUKSHETRA',
+        url: 'https://www.techkurukshetra.com'
+    }],
+     publisher: {
+        '@type': 'Organization',
+        name: 'TECH KURUKSHETRA',
+        logo: {
+            '@type': 'ImageObject',
+            url: 'https://www.techkurukshetra.com/logo.png' // Placeholder
+        }
+    },
+    mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': `https://www.techkurukshetra.com/announcements/${id}`
+    }
+  };
+
   return (
-    <div className="pt-32 pb-40 px-6 max-w-4xl mx-auto min-h-screen">
-       <Link href="/announcements" className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-12 font-headline text-xs tracking-widest uppercase group">
-        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-        Return to All Briefings
-      </Link>
-      
-      <div className="glass-panel border-primary/20 p-8 md:p-12 rounded-none stagger-reveal bg-black/40">
-        <div className="flex items-center gap-2 text-accent text-[10px] font-headline tracking-[0.2em] uppercase mb-4">
-          <Megaphone className="w-3.5 h-3.5" />
-          <span>{formatDate(announcement.timestamp)}</span>
-        </div>
+    <>
+      <Script
+          id="announcement-jsonld"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div className="pt-32 pb-40 px-6 max-w-4xl mx-auto min-h-screen">
+        <Link href="/announcements" className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-12 font-headline text-xs tracking-widest uppercase group">
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          Return to All Briefings
+        </Link>
+        
+        <div className="glass-panel border-primary/20 p-8 md:p-12 rounded-none stagger-reveal bg-black/40">
+          <div className="flex items-center gap-2 text-accent text-[10px] font-headline tracking-[0.2em] uppercase mb-4">
+            <Megaphone className="w-3.5 h-3.5" />
+            <span>{formatDate(announcement.timestamp)}</span>
+          </div>
 
-        <h1 className="text-4xl md:text-5xl font-headline mb-8 text-white tracking-tight uppercase">
-          {announcement.title}
-        </h1>
+          <h1 className="text-4xl md:text-5xl font-headline mb-8 text-white tracking-tight uppercase">
+            {announcement.title}
+          </h1>
 
-        <div className="prose prose-invert prose-p:font-light prose-p:text-muted-foreground prose-p:leading-relaxed text-lg font-light">
-           <p>{announcement.content}</p>
+          <div className="prose prose-invert prose-p:font-light prose-p:text-muted-foreground prose-p:leading-relaxed text-lg font-light">
+            <p>{announcement.content}</p>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

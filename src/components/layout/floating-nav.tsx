@@ -30,6 +30,7 @@ export function FloatingNav() {
                 <TooltipTrigger asChild>
                   <Link
                     href={item.href}
+                    aria-label={item.label}
                     className={cn(
                       "group relative flex items-center justify-center h-12 w-12 rounded-full text-muted-foreground hover:text-foreground transition-colors duration-200",
                       isActive && "text-primary"

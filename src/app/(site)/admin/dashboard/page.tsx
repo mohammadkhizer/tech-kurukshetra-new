@@ -142,7 +142,7 @@ export default function DashboardPage() {
   
   const adminIds = useMemo(() => new Set(admins?.map(admin => admin.id)), [admins]);
 
-  const [newSponsor, setNewSponsor] = useState({ name: '', logoUrl: '', tier: 'Platinum' });
+  const [newSponsor, setNewSponsor] = useState({ name: '', logoUrl: '', tier: 'Platinum', websiteUrl: '' });
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
   
   const [currentRule, setCurrentRule] = useState('');
@@ -238,8 +238,8 @@ export default function DashboardPage() {
         return;
     }
     if (sponsorsQuery) {
-        addDocumentNonBlocking(sponsorsQuery, { ...newSponsor, websiteUrl: "#", description: "A new sponsor.", contactPersonName: "N/A", contactPersonEmail: "n/a@example.com", id: Math.random().toString(36).substr(2, 9) });
-        setNewSponsor({ name: '', logoUrl: '', tier: 'Platinum' });
+        addDocumentNonBlocking(sponsorsQuery, { ...newSponsor, description: "A new sponsor.", contactPersonName: "N/A", contactPersonEmail: "n/a@example.com", id: Math.random().toString(36).substr(2, 9) });
+        setNewSponsor({ name: '', logoUrl: '', tier: 'Platinum', websiteUrl: '' });
         toast({ title: "Partner Recruited", description: `${newSponsor.name} added to the roster.` });
     }
   };
@@ -293,6 +293,7 @@ export default function DashboardPage() {
             imgId: "hero-tech",
             iconName: newEvent.type === 'eSports' ? 'Gamepad2' : (newEvent.type === 'Technical' ? 'Code' : 'BrainCircuit'),
             color: newEvent.type === 'Technical' ? "text-primary" : "text-accent",
+            updatedAt: new Date().toISOString(),
         };
         const eventDocRef = doc(firestore, 'events', slug);
         setDocumentNonBlocking(eventDocRef, eventData, { merge: true });
@@ -356,6 +357,7 @@ export default function DashboardPage() {
         festivalDayId: newEvent.festivalDayId,
         iconName: newEvent.type === 'eSports' ? 'Gamepad2' : (newEvent.type === 'Technical' ? 'Code' : 'BrainCircuit'),
         color: newEvent.type === 'Technical' ? "text-primary" : "text-accent",
+        updatedAt: new Date().toISOString(),
     };
 
     setDocumentNonBlocking(eventDocRef, updateData, { merge: true });
@@ -367,7 +369,7 @@ export default function DashboardPage() {
     if (eventsQuery) {
         INITIAL_EVENTS.forEach(event => {
             const eventDocRef = doc(firestore, 'events', event.slug);
-            const eventData = { ...event, id: event.slug };
+            const eventData = { ...event, id: event.slug, updatedAt: new Date().toISOString() };
             setDocumentNonBlocking(eventDocRef, eventData, { merge: true });
         });
         toast({ title: "Database Seeded", description: "Initial event data has been deployed to Firestore." });
@@ -507,14 +509,18 @@ export default function DashboardPage() {
         toast({ variant: "destructive", title: "Authorization Error", description: "Cannot publish announcement." });
         return;
     }
-
+    
+    const slug = newAnnouncement.title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
     const announcementData = {
         ...newAnnouncement,
-        id: Math.random().toString(36).substr(2, 9),
+        id: slug,
+        slug: slug,
         timestamp: new Date().toISOString()
     };
-    const announcementsCollection = collection(firestore, 'announcements');
-    addDocumentNonBlocking(announcementsCollection, announcementData);
+
+    const announcementDocRef = doc(firestore, 'announcements', slug);
+    setDocumentNonBlocking(announcementDocRef, announcementData, { merge: true });
+
     setNewAnnouncement({ title: '', content: '' });
     toast({ title: "Announcement Published", description: "The new announcement is now live." });
   };
@@ -652,10 +658,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="pt-32 pb-40 px-6 max-w-7xl mx-auto min-h-screen">
+    <div className="pt-32 pb-40 px-4 sm:px-6 max-w-7xl mx-auto min-h-screen">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
         <div>
-          <h1 className="font-headline text-5xl mb-2 tracking-tighter text-white uppercase">KURUKSHETRA <span className="text-primary">CONTROL</span></h1>
+          <h1 className="font-headline text-4xl md:text-5xl mb-2 tracking-tighter text-white uppercase">KURUKSHETRA <span className="text-primary">CONTROL</span></h1>
           <p className="text-muted-foreground text-sm uppercase tracking-widest font-bold">Protocol Management Panel</p>
         </div>
         <Button onClick={handleLogout} variant="outline" className="border-primary/20 rounded-none text-xs font-headline tracking-widest uppercase">
@@ -664,17 +670,19 @@ export default function DashboardPage() {
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-8" onValueChange={(value) => { setActiveTab(value); handleCancelEdit(); handleCancelArchitectEdit(); }}>
-        <TabsList className="grid grid-cols-5 md:grid-cols-9 bg-white/5 rounded-none p-1 border border-white/10">
-          <TabsTrigger value="dashboard" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Dashboard</TabsTrigger>
-          <TabsTrigger value="home" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Home</TabsTrigger>
-          <TabsTrigger value="events" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Events</TabsTrigger>
-          <TabsTrigger value="schedule" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Schedule</TabsTrigger>
-          <TabsTrigger value="announcements" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Announcements</TabsTrigger>
-          <TabsTrigger value="team" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Team</TabsTrigger>
-          <TabsTrigger value="registrations" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Registrations</TabsTrigger>
-          <TabsTrigger value="admins" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Admins</TabsTrigger>
-          <TabsTrigger value="messages" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase">Messages</TabsTrigger>
-        </TabsList>
+        <div className="w-full overflow-x-auto">
+          <TabsList className="bg-white/5 rounded-none p-1 border border-white/10">
+            <TabsTrigger value="dashboard" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase whitespace-nowrap">Dashboard</TabsTrigger>
+            <TabsTrigger value="home" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase whitespace-nowrap">Home</TabsTrigger>
+            <TabsTrigger value="events" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase whitespace-nowrap">Events</TabsTrigger>
+            <TabsTrigger value="schedule" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase whitespace-nowrap">Schedule</TabsTrigger>
+            <TabsTrigger value="announcements" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase whitespace-nowrap">Announcements</TabsTrigger>
+            <TabsTrigger value="team" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase whitespace-nowrap">Team</TabsTrigger>
+            <TabsTrigger value="registrations" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase whitespace-nowrap">Registrations</TabsTrigger>
+            <TabsTrigger value="admins" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase whitespace-nowrap">Admins</TabsTrigger>
+            <TabsTrigger value="messages" className="rounded-none font-headline text-[10px] tracking-widest py-3 uppercase whitespace-nowrap">Messages</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="dashboard" className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -739,7 +747,7 @@ export default function DashboardPage() {
                     name="subHeadline"
                     value={heroContent.subHeadline}
                     onChange={handleHeroInputChange}
-                    placeholder="Battel of Mind" 
+                    placeholder="Battle of Minds" 
                     className="bg-white/5 border-white/10 rounded-none" />
                 </div>
               </div>
@@ -815,6 +823,15 @@ export default function DashboardPage() {
                     value={newSponsor.logoUrl}
                     onChange={(e) => setNewSponsor({...newSponsor, logoUrl: e.target.value})}
                     placeholder="https://images.unsplash.com/..." 
+                    className="bg-white/5 border-white/10 rounded-none" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase tracking-widest">Website URL</Label>
+                  <Input 
+                    value={newSponsor.websiteUrl}
+                    onChange={(e) => setNewSponsor({...newSponsor, websiteUrl: e.target.value})}
+                    placeholder="https://example.com" 
                     className="bg-white/5 border-white/10 rounded-none" 
                   />
                 </div>
@@ -1227,14 +1244,14 @@ export default function DashboardPage() {
         
         <TabsContent value="registrations">
           <Card className="glass-panel border-primary/20 rounded-none bg-black/40">
-            <CardHeader className="flex flex-row justify-between items-center">
+            <CardHeader className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <CardTitle className="font-headline text-xl tracking-widest flex items-center gap-2 uppercase">
                   <Users className="w-5 h-5 text-accent" /> WARRIOR ARCHIVE
                 </CardTitle>
                 <CardDescription className="text-[10px] uppercase tracking-widest mt-1">Live Manifest of Verified Identities</CardDescription>
               </div>
-              <Button variant="outline" className="border-primary/20 text-[10px] font-headline tracking-widest rounded-none uppercase">EXPORT MANIFEST</Button>
+              <Button variant="outline" className="border-primary/20 text-[10px] font-headline tracking-widest rounded-none uppercase w-full md:w-auto">EXPORT MANIFEST</Button>
             </CardHeader>
             <CardContent>
               <Table>
@@ -1518,3 +1535,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

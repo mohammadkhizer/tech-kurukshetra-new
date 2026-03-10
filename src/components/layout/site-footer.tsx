@@ -17,7 +17,7 @@ const connectLinks = [
     { title: "Register", url: "/register" },
     { title: "Terms and conditions", url: "/terms-of-entry" },
     { title: "Privacy policy", url: "/privacy-protocol" },
-    
+    { title: "Code of Conduct", url: "/code-of-conduct" },
 ];
 
 
@@ -72,7 +72,7 @@ export function SiteFooter() {
 
             <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-primary/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground/50 font-medium">
                 <p>© {new Date().getFullYear()} TECH KURUKSHETRA. All rights reserved.</p>
-                <p className="tracking-widest uppercase">TECH KURUKSHETRA Edition 2026</p>
+                <p className="tracking-widest uppercase">Design and Develop by <a href="https://www.linkedin.com/in/mohammad-khizer-shaikh-14a362275/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Mohammed Khizer</a> and <a href="https://www.linkedin.com/in/0xdhy4n/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Dhyan Jain</a></p>
             </div>
         </footer>
     );
