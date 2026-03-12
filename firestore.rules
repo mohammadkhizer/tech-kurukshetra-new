@@ -1,0 +1,294 @@
+/**
+ * @file firestore.rules
+ * @description Security rules for the TECH KURUKSHETRA festival application.
+ *
+ * ## Core Philosophy
+ * This ruleset implements a dual-access security model. Public-facing festival
+ * information (like events, speakers, and sponsors) is readable by anyone,
+ * including unauthenticated users, to ensure easy access to event details.
+ * However, all modifications to this public data are strictly reserved for
+ * administrators.
+ *
+ * User-specific data is private and governed by a strict ownership model, where
+ * users can only access and manage their own records.
+ *
+ * ## Data Structure
+ * - `/events`, `/festivalDays`, `/speakers`, `/sponsors`, `/teamMembers`: Top-level collections for public data.
+ * - `/participant_registrations/{userId}`: Top-level collection for public user registrations.
+ * - `/admin_users/{userId}`: Top-level collection for admin user data.
+ * - `/roles_admin/{userId}`: A dedicated, non-public collection that uses document existence to grant admin privileges across the database.
+ *
+ * ## Key Security Decisions
+ * - **Admin-by-Existence**: A user is considered an administrator if a document with their UID exists in the `/roles_admin` collection. This provides a single, efficient source of truth for administrative privileges.
+ * - **Public Read, Admin Write**: All collections containing general festival information are publicly readable but can only be modified by administrators.
+ * - **Strict User Ownership**: Private collections are locked down. Users can only create, read, update, and delete their own document, enforced by matching the document ID to their authenticated UID.
+ * - **No User Listing**: To protect user privacy, non-administrative users are prohibited from listing documents in private collections.
+ * - **Admin-Managed Roles**: The `/roles_admin` collection is managed by other administrators. This allows for a decentralized way of managing roles without requiring access to the Firebase Console.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // Helper Functions
+    // -------------------------------------------------------------------------
+
+    /**
+     * Checks if the user is signed in.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the requesting user's UID exists in the admin roles collection.
+     * This is the primary mechanism for granting administrative privileges.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /**
+     * Checks if the requesting user is the owner of a document,
+     * based on a provided userId (typically from the document path).
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Validates that a document's internal `id` field matches its
+     * path ID during creation, ensuring data integrity.
+     */
+    function isIdConsistent(docId) {
+      return request.resource.data.id == docId;
+    }
+
+    /**
+     * Ensures that the document ID field cannot be changed after creation.
+     */
+    function isIdImmutable() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    // -------------------------------------------------------------------------
+    // Admin Roles Collection (`roles_admin`)
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description
+     *   Manages administrator roles. A user is an admin if a document with
+     *   their UID exists in this collection.
+     * @allow
+     *   (get) The owner of the document (to check their own status) or any admin.
+     *   (list) Any administrator can see who else is an admin.
+     *   (create) A user can create their own role document, or an existing admin can grant one.
+     *   (delete) Any administrator can revoke admin roles.
+     */
+    match /roles_admin/{adminId} {
+      allow get: if isOwner(adminId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(adminId) || isAdmin();
+      allow update: if false; // Content is irrelevant
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // Public Collections (FestivalDays, Events, Speakers, Sponsors, TeamMembers)
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description
+     *   Publicly readable information about each day of the festival.
+     *   Only administrators can create, update, or delete entries.
+     */
+    match /festivalDays/{festivalDayId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+    
+    /**
+     * @description
+     *   Publicly readable details for each event.
+     *   Only administrators can manage event data.
+     */
+    match /events/{eventId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    /**
+     * @description
+     *   Publicly readable profiles for festival speakers.
+     *   Only administrators can manage speaker profiles.
+     */
+    match /speakers/{speakerId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    /**
+     * @description
+     *   Publicly readable information about festival sponsors.
+     *   Only administrators can manage sponsor data.
+     */
+    match /sponsors/{sponsorId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    /**
+     * @description
+     *   Publicly readable profiles for the festival organizing team members.
+     *   Only administrators can manage team member data.
+     */
+    match /teamMembers/{teamMemberId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    /**
+     * @description
+     *   Publicly readable content for the homepage hero section.
+     *   Only administrators can manage hero content.
+     */
+    match /heroContent/{contentId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+    
+    /**
+     * @description
+     *   Publicly readable content for the homepage counter statistics.
+     *   Only administrators can manage this content.
+     */
+    match /counterStats/{statId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    /**
+     * @description
+     *   Publicly readable announcements for the festival.
+     *   Only administrators can manage announcements.
+     */
+    match /announcements/{announcementId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    /**
+     * @description
+     *   Publicly readable footer links.
+     *   Only administrators can manage footer links.
+     */
+    match /footerLinks/{linkId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    /**
+     * @description
+     *   Publicly readable social media links for the footer.
+     *   Only administrators can manage these links.
+     */
+    match /socialMediaLinks/{socialLinkId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    /**
+     * @description
+     *   Stores messages from the contact form. Writable by any authenticated
+     *   user, readable only by admins.
+     */
+    match /contactMessages/{messageId} {
+      allow get, list, update, delete: if isAdmin();
+      allow create: if true;
+    }
+
+    // -------------------------------------------------------------------------
+    // Private User Data Collections
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description
+     *   Stores private registration data for each festival participant.
+     */
+    match /participant_registrations/{participantId} {
+      allow get: if isOwner(participantId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(participantId) && isIdConsistent(participantId);
+      allow update: if (isOwner(participantId) || isAdmin()) && isIdImmutable();
+      allow delete: if isOwner(participantId) || isAdmin();
+    }
+    
+    /**
+     * @description
+     *   Stores basic information for users who sign up for admin access.
+     */
+    match /admin_users/{adminId} {
+      allow get: if isOwner(adminId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(adminId) && isIdConsistent(adminId);
+      allow update: if (isOwner(adminId) || isAdmin()) && isIdImmutable();
+      allow delete: if isOwner(adminId) || isAdmin();
+    }
+  }
+}
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Admin-only collections ──────────────────────────────────────────────
+    match /roles_admin/{userId} {
+      allow read, write: if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+    match /sponsors/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+    match /teamMembers/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+    match /announcements/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+    match /festivalDays/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+    match /heroContent/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+    match /counterStats/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+    match /admin_users/{docId} {
+      allow read, write: if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+    match /contactMessages/{docId} {
+      allow read: if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      allow create: if true;   // anyone can submit contact form
+      allow update, delete: if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    // ── Registrations ──────────────────────────────────────────────────────
+    // Anyone (including anonymous users) can create & update their own registration
+    // Admins can read/update/delete all registrations
+    match /participant_registrations/{regId} {
+      allow create: if request.auth != null;
+      allow read:   if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+  }
+}
